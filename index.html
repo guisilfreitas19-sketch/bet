@@ -2,15 +2,15 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Gestão de Lucro Total 2026</title>
+    <title>Gestão Pro 2026 - V104</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background-color: #000; color: #e5e7eb; font-family: sans-serif; transition: all 0.5s; }
+        body { background-color: #000; color: #e5e7eb; font-family: sans-serif; transition: background-color 0.5s; }
         .body-privado { background-color: #0c0d10 !important; }
-        .card-oled { background-color: #000; border: 1px solid #1a1a1a; border-radius: 1.5rem; transition: all 0.3s; }
+        .card-oled { background-color: #000; border: 1px solid #1a1a1a; border-radius: 1.5rem; transition: all 0.3s; position: relative; padding: 1.5rem; }
         .card-oled:hover { border-color: #3b82f6; box-shadow: 0 0 20px rgba(59, 130, 246, 0.1); }
         .barra-progresso { height: 2px; background: #111; border-radius: 2px; overflow: hidden; margin-top: 12px; }
-        .progresso-fill { height: 100%; transition: width 0.8s ease, background-color 0.8s ease; width: 0%; }
+        .progresso-fill { height: 100%; transition: width 0.8s ease; width: 0%; }
         .barra-vazia { background-color: #333; }
         .barra-ok { background-color: #3b82f6; }
         .barra-meta { background-color: #fbbf24; }
@@ -34,7 +34,7 @@
                 <div class="lg:col-span-2 flex items-center gap-4">
                     <div>
                         <p class="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Lucro Acumulado</p>
-                        <p id="exibirLucro" class="text-4xl font-mono font-bold tracking-tighter transition-all">R$ 0,00</p>
+                        <p id="exibirLucro" class="text-4xl font-mono font-bold tracking-tighter">R$ 0,00</p>
                     </div>
                     <div class="flex items-center gap-2 border border-gray-800 px-3 py-1 rounded-full bg-black">
                         <span id="txtStatus" class="text-[11px] font-bold uppercase tracking-tighter text-gray-600">--</span>
@@ -44,16 +44,16 @@
 
                 <div id="containerSaque" class="border-l border-gray-900 pl-6 flex items-center gap-4 transition-all opacity-20">
                     <div>
-                        <p class="text-[10px] font-black text-yellow-600 uppercase tracking-widest mb-1 italic underline font-bold">Total p/ Saque</p>
+                        <p class="text-[10px] font-black text-yellow-600 uppercase tracking-widest mb-1 italic underline font-bold">Total p/ Saque (100%)</p>
                         <p id="exibirSaqueTotal" class="text-2xl font-mono font-bold text-yellow-500">R$ 0,00</p>
                     </div>
                 </div>
 
                 <div class="lg:col-span-2 flex flex-col gap-2">
-                    <button id="botaoAdd" class="bg-blue-700 hover:bg-blue-600 text-white py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">＋ ADICIONAR CONTA</button>
+                    <button id="btnNovoCard" class="bg-blue-700 hover:bg-blue-600 text-white py-3 rounded-xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all">＋ ADICIONAR CONTA</button>
                     <div class="flex gap-2">
                         <button id="btnPrivacidade" class="flex-1 bg-gray-900 border border-gray-800 text-gray-400 py-2 rounded-xl text-xs">👁️ MODO PRIVADO</button>
-                        <button id="btnReset" class="flex-1 bg-red-950 border border-red-900 text-red-600 py-2 rounded-xl text-[9px] font-bold uppercase transition-all">REALIZAR SAQUE / RESET</button>
+                        <button id="btnReset" class="flex-1 bg-red-950 border border-red-900 text-red-600 py-2 rounded-xl text-[9px] font-bold uppercase">REALIZAR SAQUE / RESET</button>
                     </div>
                 </div>
             </div>
@@ -68,36 +68,134 @@
     </div>
 
     <script>
-        let bancaBase = parseFloat(localStorage.getItem('banca_v103')) || 5000;
-        let contas = JSON.parse(localStorage.getItem('contas_v103')) || [{ id: Date.now(), nome: 'BETANO - EVERTON', saldo: 0 }];
-        let memoriaAnterior = localStorage.getItem('memoria_v103') || "Nenhum saque registrado";
-        let privacidade = false;
+        // Memória v104
+        let db = {
+            banca: parseFloat(localStorage.getItem('banca_v104')) || 5000,
+            contas: JSON.parse(localStorage.getItem('contas_v104')) || [{ id: Date.now(), nome: 'BETANO - EVERTON', saldo: 0 }],
+            memoria: localStorage.getItem('memoria_v104') || "Nenhum saque registrado",
+            privacidade: false
+        };
 
-        const real = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        const fmt = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-        function atualizar() {
-            let soma = contas.reduce((acc, c) => acc + c.saldo, 0);
-            let lucro = soma - bancaBase;
-            let porcentagemLucro = bancaBase > 0 ? (lucro / bancaBase) * 100 : 0;
+        function salvar() {
+            localStorage.setItem('banca_v104', db.banca);
+            localStorage.setItem('contas_v104', JSON.stringify(db.contas));
+            localStorage.setItem('memoria_v104', db.memoria);
+            calcular();
+        }
 
-            const displayLucro = document.getElementById('exibirLucro');
-            const displaySaque = document.getElementById('exibirSaqueTotal');
-            const containerSaque = document.getElementById('containerSaque');
-            const header = document.getElementById('headerDinamico');
-            const body = document.body;
+        function calcular() {
+            const soma = db.contas.reduce((acc, c) => acc + c.saldo, 0);
+            const lucro = soma - db.banca;
+            const pct = db.banca > 0 ? (lucro / db.banca) * 100 : 0;
 
-            displayLucro.innerText = real(lucro);
+            const elLucro = document.getElementById('exibirLucro');
+            const elSaque = document.getElementById('exibirSaqueTotal');
+            const elHeader = document.getElementById('headerDinamico');
             
-            if (privacidade) {
-                displayLucro.className = "text-4xl font-mono font-bold tracking-tighter valor-privado";
-                header.classList.add('borda-privada');
-                body.classList.add('body-privado');
-                containerSaque.style.opacity = "0.1";
+            elLucro.innerText = fmt(lucro);
+            
+            if (db.privacidade) {
+                elLucro.className = "text-4xl font-mono font-bold tracking-tighter valor-privado";
+                elHeader.classList.add('borda-privada');
+                document.body.classList.add('body-privado');
             } else {
-                body.classList.remove('body-privado');
-                header.classList.remove('borda-privada');
+                document.body.classList.remove('body-privado');
+                elHeader.classList.remove('borda-privada');
                 
-                let colorClass, emoji, status;
-                if (porcentagemLucro > 20) { colorClass = "text-green-400"; emoji = "🔥"; status = "Excelente"; }
-                else if (porcentagemLucro > 0) { colorClass = "text-green-500"; emoji = "📈"; status = "Em Lucro"; }
-                else if (porcentagemLucro >= -10) { colorClass = "text-gray-500"; emoji = "⚖️"; status = "Est
+                let cor, emoji, status;
+                if (pct > 20) { cor = "text-green-400"; emoji = "🔥"; status = "Excelente"; }
+                else if (pct > 0) { cor = "text-green-500"; emoji = "📈"; status = "Em Lucro"; }
+                else if (pct >= -10) { cor = "text-gray-500"; emoji = "⚖️"; status = "Estável"; }
+                else { cor = "text-red-600"; emoji = "⚠️"; status = "Alerta"; }
+                
+                elLucro.className = `text-4xl font-mono font-bold tracking-tighter ${cor}`;
+                elHeader.style.borderTopColor = lucro >= 0 ? "#16a34a" : "#991b1b";
+                document.getElementById('emojiSaude').innerText = emoji;
+                document.getElementById('txtStatus').innerText = status;
+                document.getElementById('txtStatus').className = `text-[11px] font-bold uppercase tracking-tighter ${cor}`;
+                
+                elSaque.innerText = lucro > 0 ? fmt(lucro) : "R$ 0,00";
+                document.getElementById('containerSaque').style.opacity = lucro > 0 ? "1" : "0.2";
+            }
+            atualizarBarras();
+        }
+
+        function atualizarBarras() {
+            db.contas.forEach(c => {
+                const f = document.getElementById('fill-' + c.id);
+                if (f) {
+                    const p = db.banca > 0 ? (c.saldo / db.banca) * 100 : 0;
+                    f.style.width = Math.min(p, 100) + '%';
+                    f.className = 'progresso-fill ' + (c.saldo === 0 ? 'barra-vazia' : c.saldo >= db.banca ? 'barra-meta' : 'barra-ok');
+                }
+            });
+        }
+
+        function render() {
+            const container = document.getElementById('listaContas');
+            container.innerHTML = '';
+            db.contas.forEach(c => {
+                const div = document.createElement('div');
+                div.className = 'card-oled';
+                div.innerHTML = `
+                    <button class="absolute top-4 right-4 text-gray-800 hover:text-red-700" onclick="apiExcluir(${c.id})">✕</button>
+                    <p class="text-[10px] text-blue-700 font-black uppercase tracking-widest mb-4 italic cursor-pointer" onclick="apiRenomear(${c.id})">${c.nome} ✏️</p>
+                    <input type="text" value="${fmt(c.saldo)}" oninput="apiMascara(this, ${c.id})" onfocus="this.select()" class="${db.privacidade ? 'valor-privado' : ''} text-3xl text-white pb-2 font-mono">
+                    <div class="barra-progresso"><div class="progresso-fill" id="fill-${c.id}"></div></div>
+                `;
+                container.appendChild(div);
+            });
+            calcular();
+        }
+
+        // APIs de Ação (Reforçadas)
+        window.apiMascara = (el, id) => {
+            let v = el.value.replace(/\D/g, '');
+            let n = parseFloat((v / 100).toFixed(2)) || 0;
+            if(id === 'BANCA') db.banca = n;
+            else db.contas.find(x => x.id === id).saldo = n;
+            el.value = fmt(n);
+            salvar();
+        };
+
+        window.apiRenomear = (id) => {
+            let n = prompt("Nome da conta:");
+            if(n) { db.contas.find(x => x.id === id).nome = n.toUpperCase(); salvar(); render(); }
+        };
+
+        window.apiExcluir = (id) => {
+            if(confirm("Excluir?")) { db.contas = db.contas.filter(x => x.id !== id); salvar(); render(); }
+        };
+
+        // EVENTOS DE BOTÃO (Final do Script para não falhar)
+        document.getElementById('btnNovoCard').addEventListener('click', () => {
+            const nova = { id: Date.now(), nome: 'NOVA CONTA', saldo: 0 };
+            db.contas.push(nova);
+            salvar();
+            render();
+        });
+
+        document.getElementById('btnPrivacidade').onclick = () => { db.privacidade = !db.privacidade; render(); };
+
+        document.getElementById('btnReset').onclick = () => {
+            const lucroFinal = db.contas.reduce((a,b)=>a+b.saldo,0) - db.banca;
+            if(confirm(`Confirmar Saque de ${fmt(lucroFinal)}?`)){
+                db.memoria = `Saque de ${fmt(lucroFinal)} em ${new Date().toLocaleDateString()}`;
+                db.contas.forEach(c => c.saldo = 0);
+                document.getElementById('exibirMemoria').innerText = db.memoria;
+                salvar(); render();
+            }
+        };
+
+        document.getElementById('campoBancaBase').oninput = function() { apiMascara(this, 'BANCA'); };
+
+        // START
+        document.getElementById('campoBancaBase').value = fmt(db.banca);
+        document.getElementById('exibirMemoria').innerText = db.memoria;
+        render();
+
+    </script>
+</body>
+</html>
