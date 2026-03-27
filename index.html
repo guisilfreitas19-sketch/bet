@@ -2,93 +2,147 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Painel de Bancas 2026</title>
+    <title>Master Dashboard OLED 2026</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background-color: #000; color: #fff; font-family: sans-serif; }
-        .card { background: #111; border: 1px solid #222; padding: 20px; border-radius: 15px; margin-bottom: 10px; position: relative; }
-        input { background: transparent; border-bottom: 1px solid #333; color: #fff; outline: none; width: 100%; font-size: 1.5rem; }
-        .btn-blue { background: #2563eb; color: white; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; border: none; }
-        .btn-blue:hover { background: #1d4ed8; }
+        body { background-color: #000; color: #e5e7eb; font-family: sans-serif; }
+        .card-oled { background-color: #000; border: 1px solid #1a1a1a; border-radius: 1.5rem; transition: all 0.3s ease; }
+        .card-oled:hover { border-color: #3b82f6; box-shadow: 0 0 20px rgba(59, 130, 246, 0.1); }
+        .barra-progresso { height: 2px; background: #111; border-radius: 2px; overflow: hidden; margin-top: 12px; }
+        .progresso-fill { height: 100%; background: #3b82f6; transition: width 0.8s ease; }
+        input { background: transparent; border-bottom: 1px solid #1a1a1a; outline: none; width: 100%; transition: all 0.3s; }
+        input:focus { border-color: #3b82f6; }
+        .valor-privado { filter: blur(10px); pointer-events: none; }
     </style>
 </head>
-<body class="p-5">
+<body class="p-6 md:p-10">
 
-    <div class="max-w-4xl mx-auto">
-        <div class="bg-zinc-900 p-6 rounded-2xl mb-10 flex flex-wrap gap-6 items-center justify-between">
-            <div>
-                <p class="text-xs text-gray-500 font-bold uppercase">Investimento Inicial</p>
-                <input type="text" id="campoBancaBase" style="width: 200px;">
+    <div class="max-w-7xl mx-auto">
+        <div id="headerDinamico" class="bg-black border border-gray-900 rounded-[2rem] p-8 mb-10 border-t-4 transition-all shadow-2xl">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 items-center">
+                
+                <div>
+                    <p class="text-[10px] font-black text-gray-600 uppercase tracking-widest mb-1">Investimento Inicial</p>
+                    <input type="text" id="campoBancaBase" class="text-2xl font-mono font-bold text-blue-500">
+                </div>
+
+                <div>
+                    <p class="text-[10px] font-black text-gray-600 uppercase tracking-widest mb-1">Lucro Total</p>
+                    <p id="exibirLucro" class="text-3xl font-mono font-bold tracking-tighter transition-all">R$ 0,00</p>
+                </div>
+
+                <div id="containerSaque" class="opacity-20 border-l border-gray-900 pl-6">
+                    <p class="text-[10px] font-black text-yellow-600 uppercase tracking-widest mb-1 italic underline">Sugestão de Saque</p>
+                    <p id="exibirSaque" class="text-2xl font-mono font-bold text-yellow-500">R$ 0,00</p>
+                </div>
+
+                <div class="lg:col-span-2 flex flex-col gap-2">
+                    <button id="botaoAdd" class="bg-blue-700 hover:bg-blue-600 text-white py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">
+                        ＋ ADICIONAR CONTA
+                    </button>
+                    <div class="flex gap-2">
+                        <button id="btnPrivacidade" class="flex-1 bg-gray-900 border border-gray-800 text-gray-400 py-2 rounded-xl">👁️ MODO PRIVADO</button>
+                        <button id="btnBackup" class="flex-1 border border-gray-900 text-gray-600 py-2 rounded-xl text-[9px] font-bold uppercase">BACKUP</button>
+                    </div>
+                </div>
             </div>
-            <div>
-                <p class="text-xs text-gray-500 font-bold uppercase">Lucro Total</p>
-                <p id="exibirLucro" class="text-2xl font-bold text-green-500">R$ 0,00</p>
-            </div>
-            <button id="botaoAdd" class="btn-blue">＋ ADICIONAR CONTA</button>
         </div>
 
-        <div id="listaContas"></div>
+        <div id="listaContas" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"></div>
     </div>
 
     <script>
-        // Inicialização de Dados
-        let bancaBase = parseFloat(localStorage.getItem('banca_v99')) || 5000;
-        let contas = JSON.parse(localStorage.getItem('contas_v99')) || [
-            { id: Date.now(), nome: 'MINHA CONTA', saldo: 0 }
-        ];
+        // Memória
+        let bancaBase = parseFloat(localStorage.getItem('banca_v100')) || 5000;
+        let contas = JSON.parse(localStorage.getItem('contas_v100')) || [{ id: Date.now(), nome: 'BETANO - EVERTON', saldo: 0 }];
+        let privacidade = false;
 
-        // Elementos Fixos
-        const inputBanca = document.getElementById('campoBancaBase');
-        const displayLucro = document.getElementById('exibirLucro');
-        const listaContas = document.getElementById('listaContas');
-        const botaoAdd = document.getElementById('botaoAdd');
-
-        // Formatação
         const real = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-        function atualizarCalculos() {
+        function atualizar() {
             let soma = contas.reduce((acc, c) => acc + c.saldo, 0);
             let lucro = soma - bancaBase;
+
+            const displayLucro = document.getElementById('exibirLucro');
+            const displaySaque = document.getElementById('exibirSaque');
+            const containerSaque = document.getElementById('containerSaque');
+            const header = document.getElementById('headerDinamico');
+
             displayLucro.innerText = real(lucro);
-            displayLucro.className = lucro >= 0 ? "text-2xl font-bold text-green-500" : "text-2xl font-bold text-red-500";
-            localStorage.setItem('contas_v99', JSON.stringify(contas));
-            localStorage.setItem('banca_v99', bancaBase);
+            displayLucro.className = `text-3xl font-mono font-bold tracking-tighter ${lucro >= 0 ? 'text-green-500' : 'text-red-600'}`;
+            header.style.borderTopColor = lucro >= 0 ? "#16a34a" : "#991b1b";
+
+            if (lucro > 0) {
+                displaySaque.innerText = real(lucro);
+                containerSaque.style.opacity = "1";
+            } else {
+                displaySaque.innerText = "R$ 0,00";
+                containerSaque.style.opacity = "0.2";
+            }
+
+            localStorage.setItem('contas_v100', JSON.stringify(contas));
+            localStorage.setItem('banca_v100', bancaBase);
+            renderizarBarras();
         }
 
         function criarCard(conta) {
             const div = document.createElement('div');
-            div.className = 'card';
+            div.className = 'card-oled p-6 relative';
             div.id = 'card-' + conta.id;
 
             div.innerHTML = `
-                <div style="display:flex; justify-content: space-between; margin-bottom: 10px;">
-                    <strong style="color: #3b82f6; cursor: pointer;" onclick="mudarNome(${conta.id})">${conta.nome} ✏️</strong>
-                    <span style="cursor: pointer; color: #444;" onclick="deletar(${conta.id})">REMOVER ✕</span>
-                </div>
-                <input type="text" value="${real(conta.saldo)}" id="input-${conta.id}">
+                <button class="absolute top-4 right-4 text-gray-800 hover:text-red-600" onclick="deletar(${conta.id})">✕</button>
+                <p class="text-[10px] text-blue-700 font-black uppercase tracking-widest mb-4 italic cursor-pointer" onclick="mudarNome(${conta.id})">${conta.nome} ✏️</p>
+                <input type="text" value="${real(conta.saldo)}" id="input-${conta.id}" class="text-3xl font-mono text-white pb-2 ${privacidade ? 'valor-privado' : ''}">
+                <div class="barra-progresso"><div class="progresso-fill" id="fill-${conta.id}"></div></div>
             `;
 
-            listaContas.appendChild(div);
+            document.getElementById('listaContas').appendChild(div);
 
-            // Adiciona evento de máscara ao input do card
             const inputField = document.getElementById('input-' + conta.id);
             inputField.oninput = function() {
                 let v = this.value.replace(/\D/g, '');
                 let num = parseFloat((v / 100).toFixed(2)) || 0;
                 conta.saldo = num;
                 this.value = real(num);
-                atualizarCalculos();
+                atualizar();
             };
             inputField.onfocus = function() { this.select(); };
         }
 
-        // Função do Botão Adicionar (FORÇA BRUTA)
-        botaoAdd.onclick = function() {
-            console.log("Botão clicado!"); // Aparece no F12 do navegador
+        function renderizarBarras() {
+            contas.forEach(c => {
+                const fill = document.getElementById('fill-' + c.id);
+                if (fill) {
+                    const pct = bancaBase > 0 ? (c.saldo / bancaBase) * 100 : 0;
+                    fill.style.width = Math.min(pct, 100) + '%';
+                }
+            });
+        }
+
+        // Eventos de Botão
+        document.getElementById('botaoAdd').onclick = function() {
             const nova = { id: Date.now(), nome: 'NOVA CONTA', saldo: 0 };
             contas.push(nova);
             criarCard(nova);
-            atualizarCalculos();
+            atualizar();
+        };
+
+        document.getElementById('btnPrivacidade').onclick = function() {
+            privacidade = !privacidade;
+            document.getElementById('listaContas').innerHTML = '';
+            contas.forEach(c => criarCard(c));
+            document.getElementById('exibirLucro').classList.toggle('valor-privado');
+            document.getElementById('exibirSaque').classList.toggle('valor-privado');
+            atualizar();
+        };
+
+        document.getElementById('btnBackup').onclick = function() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({bancaBase, contas}));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            downloadAnchorNode.setAttribute("download", "backup_apostas.json");
+            downloadAnchorNode.click();
         };
 
         window.mudarNome = (id) => {
@@ -96,31 +150,31 @@
             if(n) {
                 let c = contas.find(x => x.id === id);
                 c.nome = n.toUpperCase();
-                document.getElementById('card-'+id).querySelector('strong').innerText = c.nome + " ✏️";
-                atualizarCalculos();
+                document.getElementById('listaContas').innerHTML = '';
+                contas.forEach(cx => criarCard(cx));
+                atualizar();
             }
         };
 
         window.deletar = (id) => {
-            if(confirm("Excluir?")) {
+            if(confirm("Excluir conta?")) {
                 contas = contas.filter(c => c.id !== id);
                 document.getElementById('card-'+id).remove();
-                atualizarCalculos();
+                atualizar();
             }
         };
 
-        // Máscara da Banca Inicial
-        inputBanca.oninput = function() {
+        document.getElementById('campoBancaBase').oninput = function() {
             let v = this.value.replace(/\D/g, '');
             bancaBase = parseFloat((v / 100).toFixed(2)) || 0;
             this.value = real(bancaBase);
-            atualizarCalculos();
+            atualizar();
         };
 
-        // Carregar tela inicial
-        inputBanca.value = real(bancaBase);
+        // Start
+        document.getElementById('campoBancaBase').value = real(bancaBase);
         contas.forEach(c => criarCard(c));
-        atualizarCalculos();
+        atualizar();
 
     </script>
 </body>
