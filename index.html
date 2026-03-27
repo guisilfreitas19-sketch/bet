@@ -3,88 +3,95 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Master Dashboard Apostas 2026</title>
+    <title>Dashboard 2026 - Versão Blindada</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background-color: #000; color: #e5e7eb; }
-        .card-ativo { box-shadow: 0 0 30px rgba(59, 130, 246, 0.08); border-color: rgba(59, 130, 246, 0.5) !important; }
-        .barra-progresso { height: 2px; background: #111; margin-top: 12px; }
-        .progresso-fill { height: 100%; background: #3b82f6; transition: width 0.8s ease; }
-        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-        .valor-oculto { filter: blur(8px); pointer-events: none; }
+        body { background-color: #000; color: #fff; font-family: sans-serif; }
+        .card { background: #0a0a0a; border: 1px solid #1a1a1a; border-radius: 1rem; padding: 1.5rem; position: relative; }
+        .lucro { color: #22c55e; }
+        .prejuizo { color: #ef4444; }
+        input { background: transparent; border-bottom: 1px solid #333; outline: none; width: 100%; font-family: monospace; }
+        input:focus { border-color: #3b82f6; }
+        .blur-val { filter: blur(8px); }
     </style>
 </head>
-<body class="p-4 md:p-10 font-sans">
+<body class="p-4 md:p-10">
 
-    <div class="max-w-7xl mx-auto">
-        <div id="headerDinamico" class="bg-black border border-gray-900 rounded-[2rem] p-8 mb-10 border-t-4 transition-all">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 items-center text-center md:text-left">
-                
-                <div>
-                    <p class="text-[10px] font-black text-gray-600 uppercase tracking-widest mb-2">Banca Inicial</p>
-                    <input type="text" id="bancaInicialInput" onfocus="this.select()" oninput="tratarInputBanca(this)"
-                        class="bg-transparent text-2xl font-mono font-bold text-blue-500 outline-none w-full">
-                </div>
-
-                <div>
-                    <p class="text-[10px] font-black text-gray-600 uppercase tracking-widest mb-2">Saldo Geral</p>
-                    <p id="totalGeral" class="text-3xl font-mono font-bold text-white tracking-tighter">R$ 0,00</p>
-                </div>
-                
-                <div>
-                    <p class="text-[10px] text-gray-600 uppercase font-black tracking-widest mb-2">Lucro do Mês</p>
-                    <p id="lucroGeral" class="text-2xl font-mono">R$ 0,00</p>
-                </div>
-
-                <div id="containerSaque" class="border-l border-gray-900 pl-6 opacity-20">
-                    <p class="text-[10px] font-black text-yellow-600 uppercase tracking-widest mb-2 italic underline">Saque Sugerido</p>
-                    <p id="saqueRecomendado" class="text-2xl font-mono font-bold text-yellow-500">R$ 0,00</p>
-                </div>
-
-                <div class="flex flex-col gap-2">
-                    <button id="btnAdicionar" class="bg-blue-700 hover:bg-blue-600 text-white py-3 rounded-xl text-[10px] font-black uppercase tracking-widest">
-                        + Nova Conta
-                    </button>
-                    <div class="flex gap-2">
-                        <button onclick="togglePrivacidade()" class="flex-1 bg-gray-900 border border-gray-800 text-gray-400 py-2 rounded-xl">👁️</button>
-                        <button onclick="exportarDados()" class="flex-1 border border-gray-900 text-gray-600 py-2 rounded-xl text-[9px] font-bold uppercase">Backup</button>
-                    </div>
-                </div>
+    <div class="max-w-6xl mx-auto">
+        <div class="bg-black border border-gray-800 rounded-3xl p-6 mb-8 grid grid-cols-1 md:grid-cols-4 gap-6 items-center">
+            <div>
+                <p class="text-[10px] text-gray-500 uppercase font-bold">Investimento Inicial</p>
+                <input type="text" id="bancaBaseInput" class="text-xl font-bold text-blue-400">
+            </div>
+            <div>
+                <p class="text-[10px] text-gray-500 uppercase font-bold">Lucro Líquido</p>
+                <p id="txtLucro" class="text-xl font-bold">R$ 0,00</p>
+            </div>
+            <div id="boxSaque" style="opacity: 0.2">
+                <p class="text-[10px] text-yellow-600 uppercase font-bold italic">Sugestão de Saque</p>
+                <p id="txtSaque" class="text-xl font-bold text-yellow-500">R$ 0,00</p>
+            </div>
+            <div class="flex gap-2">
+                <button id="btnNovo" class="flex-1 bg-blue-600 hover:bg-blue-500 py-3 rounded-xl font-bold text-xs uppercase">＋ Conta</button>
+                <button id="btnPrivacidade" class="bg-gray-800 px-4 rounded-xl">👁️</button>
             </div>
         </div>
 
-        <div id="gridContas" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"></div>
+        <div id="containerContas" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
     </div>
 
     <script>
-        let bancaBase = parseFloat(localStorage.getItem('banca_v_final')) || 5000;
-        let contas = JSON.parse(localStorage.getItem('contas_v_final')) || [{ id: 1, nome: 'CONTA 1', saldo: 0 }];
-        let modoPrivacidade = false;
+        // Memória do sistema
+        let dados = JSON.parse(localStorage.getItem('app_apostas_v10')) || {
+            banca: 5000,
+            contas: [{ id: 1, nome: 'BETANO - EVERTON', saldo: 0 }],
+            privacidade: false
+        };
 
-        const moneyFormat = (num) => num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        const fmt = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-        function tratarInputBanca(el) {
-            let v = el.value.replace(/\D/g, '');
-            bancaBase = parseFloat((v / 100).toFixed(2)) || 0;
-            el.value = moneyFormat(bancaBase);
-            localStorage.setItem('banca_v_final', bancaBase);
-            calcularGlobal();
-            renderizarContas(); 
+        function salvar() {
+            localStorage.setItem('app_apostas_v10', JSON.stringify(dados));
+            calcular();
         }
 
-        function tratarInputConta(el, id) {
-            let v = el.value.replace(/\D/g, '');
-            const novoSaldo = parseFloat((v / 100).toFixed(2)) || 0;
-            const index = contas.findIndex(c => c.id === id);
-            contas[index].saldo = novoSaldo;
-            el.value = moneyFormat(novoSaldo);
-            localStorage.setItem('contas_v_final', JSON.stringify(contas));
-            calcularGlobal();
+        function calcular() {
+            const totalSaldos = dados.contas.reduce((acc, c) => acc + c.saldo, 0);
+            const lucro = totalSaldos - dados.banca;
+            
+            const txtLucro = document.getElementById('txtLucro');
+            txtLucro.innerText = fmt(lucro);
+            txtLucro.className = `text-xl font-bold ${lucro >= 0 ? 'lucro' : 'prejuizo'}`;
+
+            const boxSaque = document.getElementById('boxSaque');
+            const txtSaque = document.getElementById('txtSaque');
+            if (lucro > 0) {
+                txtSaque.innerText = fmt(lucro);
+                boxSaque.style.opacity = "1";
+            } else {
+                txtSaque.innerText = "R$ 0,00";
+                boxSaque.style.opacity = "0.2";
+            }
         }
 
-        function editarNome(id) {
-            const novoNome = prompt("Novo nome para esta conta:");
-            if (novoNome) {
-                const index = contas.findIndex(c => c.id === id);
-                contas[index].nome = novoNome.toUpperCase();
-                localStorage.setItem('cont
+        function render() {
+            const container = document.getElementById('containerContas');
+            container.innerHTML = '';
+
+            dados.contas.forEach(c => {
+                const div = document.createElement('div');
+                div.className = 'card';
+                div.innerHTML = `
+                    <button class="absolute top-2 right-3 text-gray-700 hover:text-red-500" onclick="excluir(${c.id})">✕</button>
+                    <p class="text-[10px] text-blue-500 font-bold mb-4 cursor-pointer uppercase" onclick="renomear(${c.id})">${c.nome} ✏️</p>
+                    <input type="text" value="${fmt(c.saldo)}" oninput="mascara(this, ${c.id})" onfocus="this.select()" class="text-2xl font-mono ${dados.privacidade ? 'blur-val' : ''}">
+                `;
+                container.appendChild(div);
+            });
+            calcular();
+        }
+
+        // Funções de Ação
+        window.excluir = (id) => {
+            if(confirm("Excluir conta?")) {
+                dados.contas = dados.contas.filter(c => c
