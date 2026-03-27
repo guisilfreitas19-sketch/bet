@@ -2,17 +2,32 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Master Dashboard OLED 2026</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão Master OLED 2026</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background-color: #000; color: #e5e7eb; font-family: sans-serif; }
+        /* Fundo OLED padrão (Preto Absoluto) */
+        body { background-color: #000; color: #e5e7eb; font-family: sans-serif; transition: background-color 0.5s ease; }
+        
+        /* Fundo Neutro para Modo Privado */
+        .body-privado { background-color: #0c0d10 !important; }
+
         .card-oled { background-color: #000; border: 1px solid #1a1a1a; border-radius: 1.5rem; transition: all 0.3s ease; }
         .card-oled:hover { border-color: #3b82f6; box-shadow: 0 0 20px rgba(59, 130, 246, 0.1); }
+        
+        /* Barras de Progresso Dinâmicas (Cores via JS) */
         .barra-progresso { height: 2px; background: #111; border-radius: 2px; overflow: hidden; margin-top: 12px; }
-        .progresso-fill { height: 100%; background: #3b82f6; transition: width 0.8s ease; }
+        .progresso-fill { height: 100%; transition: width 0.8s ease, background-color 0.8s ease; width: 0%; }
+        
+        /* Estilos de cor para barras */
+        .barra-vazia { background-color: #333; }
+        .barra-ok { background-color: #3b82f6; } /* Azul Neon */
+        .barra-meta { background-color: #fbbf24; } /* Dourado */
+
         input { background: transparent; border-bottom: 1px solid #1a1a1a; outline: none; width: 100%; transition: all 0.3s; }
         input:focus { border-color: #3b82f6; }
-        /* Blur mais forte para sigilo total */
+        
+        /* Blur Total para Privacidade */
         .valor-privado { filter: blur(12px) grayscale(100%); pointer-events: none; opacity: 0.5; }
         .borda-privada { border-top-color: #1f2937 !important; }
     </style>
@@ -21,21 +36,29 @@
 
     <div class="max-w-7xl mx-auto">
         <div id="headerDinamico" class="bg-black border border-gray-900 rounded-[2rem] p-8 mb-10 border-t-4 transition-all shadow-2xl">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 items-center">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6 items-center">
                 
-                <div>
-                    <p class="text-[10px] font-black text-gray-600 uppercase tracking-widest mb-1">Investimento Inicial</p>
+                <div class="lg:col-span-1 pr-4">
+                    <p class="text-[10px] font-black text-gray-600 uppercase tracking-widest mb-1">Investimento Base</p>
                     <input type="text" id="campoBancaBase" class="text-2xl font-mono font-bold text-blue-500">
                 </div>
 
-                <div>
-                    <p class="text-[10px] font-black text-gray-600 uppercase tracking-widest mb-1">Lucro Total</p>
-                    <p id="exibirLucro" class="text-3xl font-mono font-bold tracking-tighter transition-all">R$ 0,00</p>
+                <div class="lg:col-span-2 flex items-center gap-4">
+                    <div>
+                        <p class="text-[10px] font-black text-gray-600 uppercase tracking-widest mb-1">Lucro Total</p>
+                        <p id="exibirLucro" class="text-4xl font-mono font-bold tracking-tighter transition-all">R$ 0,00</p>
+                    </div>
+                    <div class="flex items-center gap-2 border border-gray-800 px-3 py-1 rounded-full">
+                        <span id="txtStatus" class="text-[11px] font-bold text-gray-500 uppercase tracking-tighter">Estável</span>
+                        <span id="emojiSaude" class="text-2xl">⚖️</span>
+                    </div>
                 </div>
 
-                <div id="containerSaque" class="opacity-20 border-l border-gray-900 pl-6">
-                    <p class="text-[10px] font-black text-yellow-600 uppercase tracking-widest mb-1 italic underline">Sugestão de Saque</p>
-                    <p id="exibirSaque" class="text-2xl font-mono font-bold text-yellow-500">R$ 0,00</p>
+                <div class="border-l border-gray-900 pl-6 flex items-center gap-4">
+                    <div>
+                        <p class="text-[10px] font-black text-yellow-600 uppercase tracking-widest mb-1 italic underline">Saque Parcial (50%)</p>
+                        <p id="exibirSaqueParcial" class="text-2xl font-mono font-bold text-yellow-500">R$ 0,00</p>
+                    </div>
                 </div>
 
                 <div class="lg:col-span-2 flex flex-col gap-2">
@@ -43,21 +66,28 @@
                         ＋ ADICIONAR CONTA
                     </button>
                     <div class="flex gap-2">
-                        <button id="btnPrivacidade" class="flex-1 bg-gray-900 border border-gray-800 text-gray-400 py-2 rounded-xl flex items-center justify-center gap-2">
+                        <button id="btnPrivacidade" class="flex-1 bg-gray-900 border border-gray-800 text-gray-400 py-2 rounded-xl flex items-center justify-center gap-2 text-xs">
                             <span id="eyeIcon">👁️</span> MODO PRIVADO
                         </button>
-                        <button id="btnBackup" class="flex-1 border border-gray-900 text-gray-600 py-2 rounded-xl text-[9px] font-bold uppercase">BACKUP</button>
+                        <button id="btnReset" class="flex-1 bg-red-950 border border-red-900 text-red-600 py-2 rounded-xl text-[9px] font-bold uppercase transition-all">RESETAR MÊS</button>
                     </div>
                 </div>
             </div>
         </div>
 
         <div id="listaContas" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"></div>
+
+        <div id="logAnterior" class="mt-16 text-center border-t border-gray-900 pt-6 opacity-40 hover:opacity-100 transition-opacity">
+            <p class="text-[11px] font-bold text-gray-700 uppercase tracking-widest mb-1">Fechamento do Mês Anterior</p>
+            <p id="exibirMemoria" class="text-lg font-mono text-gray-600">--</p>
+        </div>
     </div>
 
     <script>
-        let bancaBase = parseFloat(localStorage.getItem('banca_v101')) || 5000;
-        let contas = JSON.parse(localStorage.getItem('contas_v101')) || [{ id: Date.now(), nome: 'BETANO - EVERTON', saldo: 0 }];
+        // Memória e Dados (Chave v102 para blindagem)
+        let bancaBase = parseFloat(localStorage.getItem('banca_v102')) || 5000;
+        let contas = JSON.parse(localStorage.getItem('contas_v102')) || [{ id: Date.now(), nome: 'BETANO - EVERTON', saldo: 0 }];
+        let memoriaAnterior = localStorage.getItem('memoria_v102') || "--";
         let privacidade = false;
 
         const real = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -65,34 +95,51 @@
         function atualizar() {
             let soma = contas.reduce((acc, c) => acc + c.saldo, 0);
             let lucro = soma - bancaBase;
+            let porcentagemLucro = bancaBase > 0 ? (lucro / bancaBase) * 100 : 0;
 
             const displayLucro = document.getElementById('exibirLucro');
-            const displaySaque = document.getElementById('exibirSaque');
-            const containerSaque = document.getElementById('containerSaque');
+            const displaySaqueParcial = document.getElementById('exibirSaqueParcial');
             const header = document.getElementById('headerDinamico');
+            const body = document.body;
 
             displayLucro.innerText = real(lucro);
             
-            // Lógica de Cor vs Privacidade
+            // Ajuste 1 e 5: Cor, Saúde e Fundo do Modo Privado
             if (privacidade) {
-                displayLucro.className = "text-3xl font-mono font-bold tracking-tighter valor-privado";
+                displayLucro.className = "text-4xl font-mono font-bold tracking-tighter valor-privado";
                 header.classList.add('borda-privada');
+                body.classList.add('body-privado');
             } else {
-                displayLucro.className = `text-3xl font-mono font-bold tracking-tighter ${lucro >= 0 ? 'text-green-500' : 'text-red-600'}`;
+                body.classList.remove('body-privado');
                 header.classList.remove('borda-privada');
+                
+                // Cores de performance
+                let colorClass, emoji, status;
+                if (porcentagemLucro > 20) { colorClass = "text-green-400"; emoji = "🔥"; status = "On fire"; }
+                else if (porcentagemLucro > 1) { colorClass = "text-green-500"; emoji = "📈"; status = "Crescendo"; }
+                else if (porcentagemLucro >= -10) { colorClass = "text-gray-400"; emoji = "⚖️"; status = "Atenção"; }
+                else { colorClass = "text-red-600"; emoji = "⚠️"; status = "Alerta"; }
+                
+                displayLucro.className = `text-4xl font-mono font-bold tracking-tighter ${colorClass}`;
                 header.style.borderTopColor = lucro >= 0 ? "#16a34a" : "#991b1b";
+                
+                document.getElementById('emojiSaude').innerText = emoji;
+                document.getElementById('txtStatus').innerText = status;
+                document.getElementById('txtStatus').className = `text-[11px] font-bold uppercase tracking-tighter ${colorClass}`;
             }
 
+            // Ajuste 2: Simulador de Saque Parcial (50%)
             if (lucro > 0) {
-                displaySaque.innerText = real(lucro);
-                containerSaque.style.opacity = privacidade ? "0.1" : "1";
+                const saqueParcial = lucro * 0.50;
+                displaySaqueParcial.innerText = real(saqueParcial);
+                displaySaqueParcial.parentElement.style.opacity = privacidade ? "0.1" : "1";
             } else {
-                displaySaque.innerText = "R$ 0,00";
-                containerSaque.style.opacity = "0.2";
+                displaySaqueParcial.innerText = "R$ 0,00";
+                displaySaqueParcial.parentElement.style.opacity = "0.2";
             }
 
-            localStorage.setItem('contas_v101', JSON.stringify(contas));
-            localStorage.setItem('banca_v101', bancaBase);
+            localStorage.setItem('contas_v102', JSON.stringify(contas));
+            localStorage.setItem('banca_v102', bancaBase);
             renderizarBarras();
         }
 
@@ -102,7 +149,7 @@
             div.id = 'card-' + conta.id;
 
             div.innerHTML = `
-                <button class="absolute top-4 right-4 text-gray-800 hover:text-red-600" onclick="deletar(${conta.id})">✕</button>
+                <button class="absolute top-4 right-4 text-gray-800 hover:text-red-600 transition-colors" onclick="deletar(${conta.id})">✕</button>
                 <p class="text-[10px] text-blue-700 font-black uppercase tracking-widest mb-4 italic cursor-pointer" onclick="mudarNome(${conta.id})">${conta.nome} ✏️</p>
                 <input type="text" value="${real(conta.saldo)}" id="input-${conta.id}" class="text-3xl font-mono text-white pb-2 ${privacidade ? 'valor-privado' : ''}">
                 <div class="barra-progresso"><div class="progresso-fill" id="fill-${conta.id}"></div></div>
@@ -121,16 +168,23 @@
             inputField.onfocus = function() { this.select(); };
         }
 
+        // Ajuste 1: Cores Dinâmicas das Barras
         function renderizarBarras() {
             contas.forEach(c => {
                 const fill = document.getElementById('fill-' + c.id);
                 if (fill) {
                     const pct = bancaBase > 0 ? (c.saldo / bancaBase) * 100 : 0;
                     fill.style.width = Math.min(pct, 100) + '%';
+                    
+                    fill.className = 'progresso-fill'; // Reseta
+                    if (c.saldo === 0) fill.classList.add('barra-vazia');
+                    else if (c.saldo >= bancaBase) fill.classList.add('barra-meta'); // Dourado
+                    else fill.classList.add('barra-ok'); // Azul Neon
                 }
             });
         }
 
+        // Eventos e Ações
         document.getElementById('botaoAdd').onclick = function() {
             const nova = { id: Date.now(), nome: 'NOVA CONTA', saldo: 0 };
             contas.push(nova);
@@ -141,18 +195,25 @@
         document.getElementById('btnPrivacidade').onclick = function() {
             privacidade = !privacidade;
             document.getElementById('eyeIcon').innerText = privacidade ? '🙈' : '👁️';
-            // Recarrega cards para aplicar o blur nos inputs
-            document.getElementById('listaContas').innerHTML = '';
+            document.getElementById('listaContas').innerHTML = ''; // Recarrega cards p/ blur
             contas.forEach(c => criarCard(c));
             atualizar();
         };
 
-        document.getElementById('btnBackup').onclick = function() {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({bancaBase, contas}));
-            const a = document.createElement('a');
-            a.setAttribute("href", dataStr);
-            a.setAttribute("download", "backup_apostas.json");
-            a.click();
+        // Ajuste 3: Reset Mensal com Memória
+        document.getElementById('btnReset').onclick = function() {
+            let soma = contas.reduce((acc, c) => acc + c.saldo, 0);
+            let lucroFinal = soma - bancaBase;
+
+            if (confirm("Resetar o mês? O lucro atual será salvo na memória do rodapé.")) {
+                memoriaAnterior = real(lucroFinal);
+                localStorage.setItem('memoria_v102', memoriaAnterior);
+                document.getElementById('exibirMemoria').innerText = memoriaAnterior;
+                
+                contas.forEach(c => c.saldo = 0);
+                atualizar();
+                renderizarBarras();
+            }
         };
 
         window.mudarNome = (id) => {
@@ -160,8 +221,8 @@
             if(n) {
                 let c = contas.find(x => x.id === id);
                 c.nome = n.toUpperCase();
-                document.getElementById('listaContas').innerHTML = '';
-                contas.forEach(cx => criarCard(cx));
+                // Simples reload de nomes sem re-renderizar tudo
+                document.getElementById('card-'+id).querySelector('p').innerText = c.nome + " ✏️";
                 atualizar();
             }
         };
@@ -181,8 +242,9 @@
             atualizar();
         };
 
-        // Início
+        // Carregamento Inicial
         document.getElementById('campoBancaBase').value = real(bancaBase);
+        document.getElementById('exibirMemoria').innerText = memoriaAnterior;
         contas.forEach(c => criarCard(c));
         atualizar();
 
