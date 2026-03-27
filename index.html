@@ -12,7 +12,9 @@
         .progresso-fill { height: 100%; background: #3b82f6; transition: width 0.8s ease; }
         input { background: transparent; border-bottom: 1px solid #1a1a1a; outline: none; width: 100%; transition: all 0.3s; }
         input:focus { border-color: #3b82f6; }
-        .valor-privado { filter: blur(10px); pointer-events: none; }
+        /* Blur mais forte para sigilo total */
+        .valor-privado { filter: blur(12px) grayscale(100%); pointer-events: none; opacity: 0.5; }
+        .borda-privada { border-top-color: #1f2937 !important; }
     </style>
 </head>
 <body class="p-6 md:p-10">
@@ -41,7 +43,9 @@
                         ＋ ADICIONAR CONTA
                     </button>
                     <div class="flex gap-2">
-                        <button id="btnPrivacidade" class="flex-1 bg-gray-900 border border-gray-800 text-gray-400 py-2 rounded-xl">👁️ MODO PRIVADO</button>
+                        <button id="btnPrivacidade" class="flex-1 bg-gray-900 border border-gray-800 text-gray-400 py-2 rounded-xl flex items-center justify-center gap-2">
+                            <span id="eyeIcon">👁️</span> MODO PRIVADO
+                        </button>
                         <button id="btnBackup" class="flex-1 border border-gray-900 text-gray-600 py-2 rounded-xl text-[9px] font-bold uppercase">BACKUP</button>
                     </div>
                 </div>
@@ -52,9 +56,8 @@
     </div>
 
     <script>
-        // Memória
-        let bancaBase = parseFloat(localStorage.getItem('banca_v100')) || 5000;
-        let contas = JSON.parse(localStorage.getItem('contas_v100')) || [{ id: Date.now(), nome: 'BETANO - EVERTON', saldo: 0 }];
+        let bancaBase = parseFloat(localStorage.getItem('banca_v101')) || 5000;
+        let contas = JSON.parse(localStorage.getItem('contas_v101')) || [{ id: Date.now(), nome: 'BETANO - EVERTON', saldo: 0 }];
         let privacidade = false;
 
         const real = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -69,19 +72,27 @@
             const header = document.getElementById('headerDinamico');
 
             displayLucro.innerText = real(lucro);
-            displayLucro.className = `text-3xl font-mono font-bold tracking-tighter ${lucro >= 0 ? 'text-green-500' : 'text-red-600'}`;
-            header.style.borderTopColor = lucro >= 0 ? "#16a34a" : "#991b1b";
+            
+            // Lógica de Cor vs Privacidade
+            if (privacidade) {
+                displayLucro.className = "text-3xl font-mono font-bold tracking-tighter valor-privado";
+                header.classList.add('borda-privada');
+            } else {
+                displayLucro.className = `text-3xl font-mono font-bold tracking-tighter ${lucro >= 0 ? 'text-green-500' : 'text-red-600'}`;
+                header.classList.remove('borda-privada');
+                header.style.borderTopColor = lucro >= 0 ? "#16a34a" : "#991b1b";
+            }
 
             if (lucro > 0) {
                 displaySaque.innerText = real(lucro);
-                containerSaque.style.opacity = "1";
+                containerSaque.style.opacity = privacidade ? "0.1" : "1";
             } else {
                 displaySaque.innerText = "R$ 0,00";
                 containerSaque.style.opacity = "0.2";
             }
 
-            localStorage.setItem('contas_v100', JSON.stringify(contas));
-            localStorage.setItem('banca_v100', bancaBase);
+            localStorage.setItem('contas_v101', JSON.stringify(contas));
+            localStorage.setItem('banca_v101', bancaBase);
             renderizarBarras();
         }
 
@@ -120,7 +131,6 @@
             });
         }
 
-        // Eventos de Botão
         document.getElementById('botaoAdd').onclick = function() {
             const nova = { id: Date.now(), nome: 'NOVA CONTA', saldo: 0 };
             contas.push(nova);
@@ -130,19 +140,19 @@
 
         document.getElementById('btnPrivacidade').onclick = function() {
             privacidade = !privacidade;
+            document.getElementById('eyeIcon').innerText = privacidade ? '🙈' : '👁️';
+            // Recarrega cards para aplicar o blur nos inputs
             document.getElementById('listaContas').innerHTML = '';
             contas.forEach(c => criarCard(c));
-            document.getElementById('exibirLucro').classList.toggle('valor-privado');
-            document.getElementById('exibirSaque').classList.toggle('valor-privado');
             atualizar();
         };
 
         document.getElementById('btnBackup').onclick = function() {
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({bancaBase, contas}));
-            const downloadAnchorNode = document.createElement('a');
-            downloadAnchorNode.setAttribute("href", dataStr);
-            downloadAnchorNode.setAttribute("download", "backup_apostas.json");
-            downloadAnchorNode.click();
+            const a = document.createElement('a');
+            a.setAttribute("href", dataStr);
+            a.setAttribute("download", "backup_apostas.json");
+            a.click();
         };
 
         window.mudarNome = (id) => {
@@ -171,7 +181,7 @@
             atualizar();
         };
 
-        // Start
+        // Início
         document.getElementById('campoBancaBase').value = real(bancaBase);
         contas.forEach(c => criarCard(c));
         atualizar();
