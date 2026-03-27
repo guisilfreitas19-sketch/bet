@@ -2,32 +2,20 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestão Master OLED 2026</title>
+    <title>Gestão de Lucro Total 2026</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Fundo OLED padrão (Preto Absoluto) */
-        body { background-color: #000; color: #e5e7eb; font-family: sans-serif; transition: background-color 0.5s ease; }
-        
-        /* Fundo Neutro para Modo Privado */
+        body { background-color: #000; color: #e5e7eb; font-family: sans-serif; transition: all 0.5s; }
         .body-privado { background-color: #0c0d10 !important; }
-
-        .card-oled { background-color: #000; border: 1px solid #1a1a1a; border-radius: 1.5rem; transition: all 0.3s ease; }
+        .card-oled { background-color: #000; border: 1px solid #1a1a1a; border-radius: 1.5rem; transition: all 0.3s; }
         .card-oled:hover { border-color: #3b82f6; box-shadow: 0 0 20px rgba(59, 130, 246, 0.1); }
-        
-        /* Barras de Progresso Dinâmicas (Cores via JS) */
         .barra-progresso { height: 2px; background: #111; border-radius: 2px; overflow: hidden; margin-top: 12px; }
         .progresso-fill { height: 100%; transition: width 0.8s ease, background-color 0.8s ease; width: 0%; }
-        
-        /* Estilos de cor para barras */
         .barra-vazia { background-color: #333; }
-        .barra-ok { background-color: #3b82f6; } /* Azul Neon */
-        .barra-meta { background-color: #fbbf24; } /* Dourado */
-
-        input { background: transparent; border-bottom: 1px solid #1a1a1a; outline: none; width: 100%; transition: all 0.3s; }
+        .barra-ok { background-color: #3b82f6; }
+        .barra-meta { background-color: #fbbf24; }
+        input { background: transparent; border-bottom: 1px solid #1a1a1a; outline: none; width: 100%; transition: all 0.3s; font-family: monospace; }
         input:focus { border-color: #3b82f6; }
-        
-        /* Blur Total para Privacidade */
         .valor-privado { filter: blur(12px) grayscale(100%); pointer-events: none; opacity: 0.5; }
         .borda-privada { border-top-color: #1f2937 !important; }
     </style>
@@ -39,37 +27,33 @@
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6 items-center">
                 
                 <div class="lg:col-span-1 pr-4">
-                    <p class="text-[10px] font-black text-gray-600 uppercase tracking-widest mb-1">Investimento Base</p>
-                    <input type="text" id="campoBancaBase" class="text-2xl font-mono font-bold text-blue-500">
+                    <p class="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Banca Inicial</p>
+                    <input type="text" id="campoBancaBase" class="text-2xl font-bold text-blue-500">
                 </div>
 
                 <div class="lg:col-span-2 flex items-center gap-4">
                     <div>
-                        <p class="text-[10px] font-black text-gray-600 uppercase tracking-widest mb-1">Lucro Total</p>
+                        <p class="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Lucro Acumulado</p>
                         <p id="exibirLucro" class="text-4xl font-mono font-bold tracking-tighter transition-all">R$ 0,00</p>
                     </div>
-                    <div class="flex items-center gap-2 border border-gray-800 px-3 py-1 rounded-full">
-                        <span id="txtStatus" class="text-[11px] font-bold text-gray-500 uppercase tracking-tighter">Estável</span>
+                    <div class="flex items-center gap-2 border border-gray-800 px-3 py-1 rounded-full bg-black">
+                        <span id="txtStatus" class="text-[11px] font-bold uppercase tracking-tighter text-gray-600">--</span>
                         <span id="emojiSaude" class="text-2xl">⚖️</span>
                     </div>
                 </div>
 
-                <div class="border-l border-gray-900 pl-6 flex items-center gap-4">
+                <div id="containerSaque" class="border-l border-gray-900 pl-6 flex items-center gap-4 transition-all opacity-20">
                     <div>
-                        <p class="text-[10px] font-black text-yellow-600 uppercase tracking-widest mb-1 italic underline">Saque Parcial (50%)</p>
-                        <p id="exibirSaqueParcial" class="text-2xl font-mono font-bold text-yellow-500">R$ 0,00</p>
+                        <p class="text-[10px] font-black text-yellow-600 uppercase tracking-widest mb-1 italic underline font-bold">Total p/ Saque</p>
+                        <p id="exibirSaqueTotal" class="text-2xl font-mono font-bold text-yellow-500">R$ 0,00</p>
                     </div>
                 </div>
 
                 <div class="lg:col-span-2 flex flex-col gap-2">
-                    <button id="botaoAdd" class="bg-blue-700 hover:bg-blue-600 text-white py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">
-                        ＋ ADICIONAR CONTA
-                    </button>
+                    <button id="botaoAdd" class="bg-blue-700 hover:bg-blue-600 text-white py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">＋ ADICIONAR CONTA</button>
                     <div class="flex gap-2">
-                        <button id="btnPrivacidade" class="flex-1 bg-gray-900 border border-gray-800 text-gray-400 py-2 rounded-xl flex items-center justify-center gap-2 text-xs">
-                            <span id="eyeIcon">👁️</span> MODO PRIVADO
-                        </button>
-                        <button id="btnReset" class="flex-1 bg-red-950 border border-red-900 text-red-600 py-2 rounded-xl text-[9px] font-bold uppercase transition-all">RESETAR MÊS</button>
+                        <button id="btnPrivacidade" class="flex-1 bg-gray-900 border border-gray-800 text-gray-400 py-2 rounded-xl text-xs">👁️ MODO PRIVADO</button>
+                        <button id="btnReset" class="flex-1 bg-red-950 border border-red-900 text-red-600 py-2 rounded-xl text-[9px] font-bold uppercase transition-all">REALIZAR SAQUE / RESET</button>
                     </div>
                 </div>
             </div>
@@ -77,17 +61,16 @@
 
         <div id="listaContas" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"></div>
 
-        <div id="logAnterior" class="mt-16 text-center border-t border-gray-900 pt-6 opacity-40 hover:opacity-100 transition-opacity">
-            <p class="text-[11px] font-bold text-gray-700 uppercase tracking-widest mb-1">Fechamento do Mês Anterior</p>
-            <p id="exibirMemoria" class="text-lg font-mono text-gray-600">--</p>
+        <div id="logAnterior" class="mt-16 text-center border-t border-gray-900 pt-6 opacity-30 hover:opacity-100 transition-opacity">
+            <p class="text-[11px] font-bold text-gray-700 uppercase tracking-widest mb-1">Último Saque Realizado</p>
+            <p id="exibirMemoria" class="text-lg font-mono text-gray-600">Nenhum saque registrado</p>
         </div>
     </div>
 
     <script>
-        // Memória e Dados (Chave v102 para blindagem)
-        let bancaBase = parseFloat(localStorage.getItem('banca_v102')) || 5000;
-        let contas = JSON.parse(localStorage.getItem('contas_v102')) || [{ id: Date.now(), nome: 'BETANO - EVERTON', saldo: 0 }];
-        let memoriaAnterior = localStorage.getItem('memoria_v102') || "--";
+        let bancaBase = parseFloat(localStorage.getItem('banca_v103')) || 5000;
+        let contas = JSON.parse(localStorage.getItem('contas_v103')) || [{ id: Date.now(), nome: 'BETANO - EVERTON', saldo: 0 }];
+        let memoriaAnterior = localStorage.getItem('memoria_v103') || "Nenhum saque registrado";
         let privacidade = false;
 
         const real = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -98,156 +81,23 @@
             let porcentagemLucro = bancaBase > 0 ? (lucro / bancaBase) * 100 : 0;
 
             const displayLucro = document.getElementById('exibirLucro');
-            const displaySaqueParcial = document.getElementById('exibirSaqueParcial');
+            const displaySaque = document.getElementById('exibirSaqueTotal');
+            const containerSaque = document.getElementById('containerSaque');
             const header = document.getElementById('headerDinamico');
             const body = document.body;
 
             displayLucro.innerText = real(lucro);
             
-            // Ajuste 1 e 5: Cor, Saúde e Fundo do Modo Privado
             if (privacidade) {
                 displayLucro.className = "text-4xl font-mono font-bold tracking-tighter valor-privado";
                 header.classList.add('borda-privada');
                 body.classList.add('body-privado');
+                containerSaque.style.opacity = "0.1";
             } else {
                 body.classList.remove('body-privado');
                 header.classList.remove('borda-privada');
                 
-                // Cores de performance
                 let colorClass, emoji, status;
-                if (porcentagemLucro > 20) { colorClass = "text-green-400"; emoji = "🔥"; status = "On fire"; }
-                else if (porcentagemLucro > 1) { colorClass = "text-green-500"; emoji = "📈"; status = "Crescendo"; }
-                else if (porcentagemLucro >= -10) { colorClass = "text-gray-400"; emoji = "⚖️"; status = "Atenção"; }
-                else { colorClass = "text-red-600"; emoji = "⚠️"; status = "Alerta"; }
-                
-                displayLucro.className = `text-4xl font-mono font-bold tracking-tighter ${colorClass}`;
-                header.style.borderTopColor = lucro >= 0 ? "#16a34a" : "#991b1b";
-                
-                document.getElementById('emojiSaude').innerText = emoji;
-                document.getElementById('txtStatus').innerText = status;
-                document.getElementById('txtStatus').className = `text-[11px] font-bold uppercase tracking-tighter ${colorClass}`;
-            }
-
-            // Ajuste 2: Simulador de Saque Parcial (50%)
-            if (lucro > 0) {
-                const saqueParcial = lucro * 0.50;
-                displaySaqueParcial.innerText = real(saqueParcial);
-                displaySaqueParcial.parentElement.style.opacity = privacidade ? "0.1" : "1";
-            } else {
-                displaySaqueParcial.innerText = "R$ 0,00";
-                displaySaqueParcial.parentElement.style.opacity = "0.2";
-            }
-
-            localStorage.setItem('contas_v102', JSON.stringify(contas));
-            localStorage.setItem('banca_v102', bancaBase);
-            renderizarBarras();
-        }
-
-        function criarCard(conta) {
-            const div = document.createElement('div');
-            div.className = 'card-oled p-6 relative';
-            div.id = 'card-' + conta.id;
-
-            div.innerHTML = `
-                <button class="absolute top-4 right-4 text-gray-800 hover:text-red-600 transition-colors" onclick="deletar(${conta.id})">✕</button>
-                <p class="text-[10px] text-blue-700 font-black uppercase tracking-widest mb-4 italic cursor-pointer" onclick="mudarNome(${conta.id})">${conta.nome} ✏️</p>
-                <input type="text" value="${real(conta.saldo)}" id="input-${conta.id}" class="text-3xl font-mono text-white pb-2 ${privacidade ? 'valor-privado' : ''}">
-                <div class="barra-progresso"><div class="progresso-fill" id="fill-${conta.id}"></div></div>
-            `;
-
-            document.getElementById('listaContas').appendChild(div);
-
-            const inputField = document.getElementById('input-' + conta.id);
-            inputField.oninput = function() {
-                let v = this.value.replace(/\D/g, '');
-                let num = parseFloat((v / 100).toFixed(2)) || 0;
-                conta.saldo = num;
-                this.value = real(num);
-                atualizar();
-            };
-            inputField.onfocus = function() { this.select(); };
-        }
-
-        // Ajuste 1: Cores Dinâmicas das Barras
-        function renderizarBarras() {
-            contas.forEach(c => {
-                const fill = document.getElementById('fill-' + c.id);
-                if (fill) {
-                    const pct = bancaBase > 0 ? (c.saldo / bancaBase) * 100 : 0;
-                    fill.style.width = Math.min(pct, 100) + '%';
-                    
-                    fill.className = 'progresso-fill'; // Reseta
-                    if (c.saldo === 0) fill.classList.add('barra-vazia');
-                    else if (c.saldo >= bancaBase) fill.classList.add('barra-meta'); // Dourado
-                    else fill.classList.add('barra-ok'); // Azul Neon
-                }
-            });
-        }
-
-        // Eventos e Ações
-        document.getElementById('botaoAdd').onclick = function() {
-            const nova = { id: Date.now(), nome: 'NOVA CONTA', saldo: 0 };
-            contas.push(nova);
-            criarCard(nova);
-            atualizar();
-        };
-
-        document.getElementById('btnPrivacidade').onclick = function() {
-            privacidade = !privacidade;
-            document.getElementById('eyeIcon').innerText = privacidade ? '🙈' : '👁️';
-            document.getElementById('listaContas').innerHTML = ''; // Recarrega cards p/ blur
-            contas.forEach(c => criarCard(c));
-            atualizar();
-        };
-
-        // Ajuste 3: Reset Mensal com Memória
-        document.getElementById('btnReset').onclick = function() {
-            let soma = contas.reduce((acc, c) => acc + c.saldo, 0);
-            let lucroFinal = soma - bancaBase;
-
-            if (confirm("Resetar o mês? O lucro atual será salvo na memória do rodapé.")) {
-                memoriaAnterior = real(lucroFinal);
-                localStorage.setItem('memoria_v102', memoriaAnterior);
-                document.getElementById('exibirMemoria').innerText = memoriaAnterior;
-                
-                contas.forEach(c => c.saldo = 0);
-                atualizar();
-                renderizarBarras();
-            }
-        };
-
-        window.mudarNome = (id) => {
-            let n = prompt("Nome da conta:");
-            if(n) {
-                let c = contas.find(x => x.id === id);
-                c.nome = n.toUpperCase();
-                // Simples reload de nomes sem re-renderizar tudo
-                document.getElementById('card-'+id).querySelector('p').innerText = c.nome + " ✏️";
-                atualizar();
-            }
-        };
-
-        window.deletar = (id) => {
-            if(confirm("Excluir conta?")) {
-                contas = contas.filter(c => c.id !== id);
-                document.getElementById('card-'+id).remove();
-                atualizar();
-            }
-        };
-
-        document.getElementById('campoBancaBase').oninput = function() {
-            let v = this.value.replace(/\D/g, '');
-            bancaBase = parseFloat((v / 100).toFixed(2)) || 0;
-            this.value = real(bancaBase);
-            atualizar();
-        };
-
-        // Carregamento Inicial
-        document.getElementById('campoBancaBase').value = real(bancaBase);
-        document.getElementById('exibirMemoria').innerText = memoriaAnterior;
-        contas.forEach(c => criarCard(c));
-        atualizar();
-
-    </script>
-</body>
-</html>
+                if (porcentagemLucro > 20) { colorClass = "text-green-400"; emoji = "🔥"; status = "Excelente"; }
+                else if (porcentagemLucro > 0) { colorClass = "text-green-500"; emoji = "📈"; status = "Em Lucro"; }
+                else if (porcentagemLucro >= -10) { colorClass = "text-gray-500"; emoji = "⚖️"; status = "Est
