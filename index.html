@@ -2,96 +2,126 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard 2026 - Versão Blindada</title>
+    <title>Painel de Bancas 2026</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #000; color: #fff; font-family: sans-serif; }
-        .card { background: #0a0a0a; border: 1px solid #1a1a1a; border-radius: 1rem; padding: 1.5rem; position: relative; }
-        .lucro { color: #22c55e; }
-        .prejuizo { color: #ef4444; }
-        input { background: transparent; border-bottom: 1px solid #333; outline: none; width: 100%; font-family: monospace; }
-        input:focus { border-color: #3b82f6; }
-        .blur-val { filter: blur(8px); }
+        .card { background: #111; border: 1px solid #222; padding: 20px; border-radius: 15px; margin-bottom: 10px; position: relative; }
+        input { background: transparent; border-bottom: 1px solid #333; color: #fff; outline: none; width: 100%; font-size: 1.5rem; }
+        .btn-blue { background: #2563eb; color: white; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; border: none; }
+        .btn-blue:hover { background: #1d4ed8; }
     </style>
 </head>
-<body class="p-4 md:p-10">
+<body class="p-5">
 
-    <div class="max-w-6xl mx-auto">
-        <div class="bg-black border border-gray-800 rounded-3xl p-6 mb-8 grid grid-cols-1 md:grid-cols-4 gap-6 items-center">
+    <div class="max-w-4xl mx-auto">
+        <div class="bg-zinc-900 p-6 rounded-2xl mb-10 flex flex-wrap gap-6 items-center justify-between">
             <div>
-                <p class="text-[10px] text-gray-500 uppercase font-bold">Investimento Inicial</p>
-                <input type="text" id="bancaBaseInput" class="text-xl font-bold text-blue-400">
+                <p class="text-xs text-gray-500 font-bold uppercase">Investimento Inicial</p>
+                <input type="text" id="campoBancaBase" style="width: 200px;">
             </div>
             <div>
-                <p class="text-[10px] text-gray-500 uppercase font-bold">Lucro Líquido</p>
-                <p id="txtLucro" class="text-xl font-bold">R$ 0,00</p>
+                <p class="text-xs text-gray-500 font-bold uppercase">Lucro Total</p>
+                <p id="exibirLucro" class="text-2xl font-bold text-green-500">R$ 0,00</p>
             </div>
-            <div id="boxSaque" style="opacity: 0.2">
-                <p class="text-[10px] text-yellow-600 uppercase font-bold italic">Sugestão de Saque</p>
-                <p id="txtSaque" class="text-xl font-bold text-yellow-500">R$ 0,00</p>
-            </div>
-            <div class="flex gap-2">
-                <button id="btnNovo" class="flex-1 bg-blue-600 hover:bg-blue-500 py-3 rounded-xl font-bold text-xs uppercase">＋ Conta</button>
-                <button id="btnPrivacidade" class="bg-gray-800 px-4 rounded-xl">👁️</button>
-            </div>
+            <button id="botaoAdd" class="btn-blue">＋ ADICIONAR CONTA</button>
         </div>
 
-        <div id="containerContas" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+        <div id="listaContas"></div>
     </div>
 
     <script>
-        // Memória do sistema
-        let dados = JSON.parse(localStorage.getItem('app_apostas_v10')) || {
-            banca: 5000,
-            contas: [{ id: 1, nome: 'BETANO - EVERTON', saldo: 0 }],
-            privacidade: false
+        // Inicialização de Dados
+        let bancaBase = parseFloat(localStorage.getItem('banca_v99')) || 5000;
+        let contas = JSON.parse(localStorage.getItem('contas_v99')) || [
+            { id: Date.now(), nome: 'MINHA CONTA', saldo: 0 }
+        ];
+
+        // Elementos Fixos
+        const inputBanca = document.getElementById('campoBancaBase');
+        const displayLucro = document.getElementById('exibirLucro');
+        const listaContas = document.getElementById('listaContas');
+        const botaoAdd = document.getElementById('botaoAdd');
+
+        // Formatação
+        const real = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+        function atualizarCalculos() {
+            let soma = contas.reduce((acc, c) => acc + c.saldo, 0);
+            let lucro = soma - bancaBase;
+            displayLucro.innerText = real(lucro);
+            displayLucro.className = lucro >= 0 ? "text-2xl font-bold text-green-500" : "text-2xl font-bold text-red-500";
+            localStorage.setItem('contas_v99', JSON.stringify(contas));
+            localStorage.setItem('banca_v99', bancaBase);
+        }
+
+        function criarCard(conta) {
+            const div = document.createElement('div');
+            div.className = 'card';
+            div.id = 'card-' + conta.id;
+
+            div.innerHTML = `
+                <div style="display:flex; justify-content: space-between; margin-bottom: 10px;">
+                    <strong style="color: #3b82f6; cursor: pointer;" onclick="mudarNome(${conta.id})">${conta.nome} ✏️</strong>
+                    <span style="cursor: pointer; color: #444;" onclick="deletar(${conta.id})">REMOVER ✕</span>
+                </div>
+                <input type="text" value="${real(conta.saldo)}" id="input-${conta.id}">
+            `;
+
+            listaContas.appendChild(div);
+
+            // Adiciona evento de máscara ao input do card
+            const inputField = document.getElementById('input-' + conta.id);
+            inputField.oninput = function() {
+                let v = this.value.replace(/\D/g, '');
+                let num = parseFloat((v / 100).toFixed(2)) || 0;
+                conta.saldo = num;
+                this.value = real(num);
+                atualizarCalculos();
+            };
+            inputField.onfocus = function() { this.select(); };
+        }
+
+        // Função do Botão Adicionar (FORÇA BRUTA)
+        botaoAdd.onclick = function() {
+            console.log("Botão clicado!"); // Aparece no F12 do navegador
+            const nova = { id: Date.now(), nome: 'NOVA CONTA', saldo: 0 };
+            contas.push(nova);
+            criarCard(nova);
+            atualizarCalculos();
         };
 
-        const fmt = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-
-        function salvar() {
-            localStorage.setItem('app_apostas_v10', JSON.stringify(dados));
-            calcular();
-        }
-
-        function calcular() {
-            const totalSaldos = dados.contas.reduce((acc, c) => acc + c.saldo, 0);
-            const lucro = totalSaldos - dados.banca;
-            
-            const txtLucro = document.getElementById('txtLucro');
-            txtLucro.innerText = fmt(lucro);
-            txtLucro.className = `text-xl font-bold ${lucro >= 0 ? 'lucro' : 'prejuizo'}`;
-
-            const boxSaque = document.getElementById('boxSaque');
-            const txtSaque = document.getElementById('txtSaque');
-            if (lucro > 0) {
-                txtSaque.innerText = fmt(lucro);
-                boxSaque.style.opacity = "1";
-            } else {
-                txtSaque.innerText = "R$ 0,00";
-                boxSaque.style.opacity = "0.2";
+        window.mudarNome = (id) => {
+            let n = prompt("Nome da conta:");
+            if(n) {
+                let c = contas.find(x => x.id === id);
+                c.nome = n.toUpperCase();
+                document.getElementById('card-'+id).querySelector('strong').innerText = c.nome + " ✏️";
+                atualizarCalculos();
             }
-        }
+        };
 
-        function render() {
-            const container = document.getElementById('containerContas');
-            container.innerHTML = '';
+        window.deletar = (id) => {
+            if(confirm("Excluir?")) {
+                contas = contas.filter(c => c.id !== id);
+                document.getElementById('card-'+id).remove();
+                atualizarCalculos();
+            }
+        };
 
-            dados.contas.forEach(c => {
-                const div = document.createElement('div');
-                div.className = 'card';
-                div.innerHTML = `
-                    <button class="absolute top-2 right-3 text-gray-700 hover:text-red-500" onclick="excluir(${c.id})">✕</button>
-                    <p class="text-[10px] text-blue-500 font-bold mb-4 cursor-pointer uppercase" onclick="renomear(${c.id})">${c.nome} ✏️</p>
-                    <input type="text" value="${fmt(c.saldo)}" oninput="mascara(this, ${c.id})" onfocus="this.select()" class="text-2xl font-mono ${dados.privacidade ? 'blur-val' : ''}">
-                `;
-                container.appendChild(div);
-            });
-            calcular();
-        }
+        // Máscara da Banca Inicial
+        inputBanca.oninput = function() {
+            let v = this.value.replace(/\D/g, '');
+            bancaBase = parseFloat((v / 100).toFixed(2)) || 0;
+            this.value = real(bancaBase);
+            atualizarCalculos();
+        };
 
-        // Funções de Ação
-        window.excluir = (id) => {
-            if(confirm("Excluir conta?")) {
-                dados.contas = dados.contas.filter(c => c
+        // Carregar tela inicial
+        inputBanca.value = real(bancaBase);
+        contas.forEach(c => criarCard(c));
+        atualizarCalculos();
+
+    </script>
+</body>
+</html>
