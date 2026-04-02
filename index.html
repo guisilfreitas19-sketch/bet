@@ -1,211 +1,157 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <title>Bet Dashboard - Gestão de Capital v1.3</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
+<meta charset="UTF-8">
+<title>Bet Dashboard v1.4</title>
 
-    <style>
-        body { background-color: #f8fafc; color: #1e293b; font-family: 'Inter', sans-serif; }
-        .card-oled { 
-            background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 2rem; 
-            padding: 1.5rem; transition: all 0.3s;
-        }
-        .card-oled:hover { border-color: #3b82f6; transform: translateY(-4px); }
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
 
-        input { background: transparent; border-bottom: 1px solid #e2e8f0; font-family: 'JetBrains Mono', monospace; }
-        input:focus { border-color: #3b82f6; outline: none; }
-
-        .saque-ativo { border-color: #fbbf24 !important; background: #fffdf2; }
-    </style>
+<style>
+body { background:#f8fafc; font-family:Inter; }
+.card { background:#fff; border:1px solid #e2e8f0; border-radius:24px; padding:20px; }
+input { border-bottom:1px solid #e2e8f0; font-family:'JetBrains Mono'; }
+input:focus { outline:none; border-color:#3b82f6; }
+</style>
 </head>
 
-<body class="p-6 md:p-10">
+<body class="p-8">
 
-<div class="max-w-7xl mx-auto">
+<div class="max-w-6xl mx-auto">
 
-    <!-- HEADER -->
-    <div class="bg-white border rounded-3xl p-8 mb-10 shadow">
-        <p class="text-xs uppercase text-gray-400 mb-2">Seu Lucro Líquido</p>
-        <p id="exibirLucro" class="text-5xl font-mono font-bold text-emerald-500">R$ 0,00</p>
-    </div>
+<h1 class="text-gray-400 text-xs mb-2">SEU LUCRO LÍQUIDO</h1>
+<h2 id="total" class="text-5xl text-green-500 font-mono mb-10">R$ 0,00</h2>
 
-    <button id="btnNovoCard" class="mb-6 bg-black text-white px-6 py-3 rounded-xl text-xs uppercase font-bold">
-        + Nova Conta
-    </button>
+<button onclick="novo()" class="bg-black text-white px-5 py-3 rounded-xl mb-6">
++ NOVA CONTA
+</button>
 
-    <div id="listaContas" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+<div id="contas" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
 
 </div>
 
 <script>
-// 🔒 proteção
-function safeNumber(v) {
-    return isNaN(v) || v === null ? 0 : Number(v);
+function safe(n){ return isNaN(n) ? 0 : Number(n); }
+
+let data = JSON.parse(localStorage.getItem('db')) || [
+ {id:1,nome:'EVERTON',saldo:3400,invest:4000,com:90},
+ {id:2,nome:'GUILHERME',saldo:1050,invest:1000,com:100},
+ {id:3,nome:'HINGRID',saldo:1000,invest:0,com:50}
+];
+
+const fmt = v => safe(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+
+function salvar(){
+ localStorage.setItem('db',JSON.stringify(data));
+ calc();
 }
 
-// carregar dados
-let contasStorage = JSON.parse(localStorage.getItem('c_v105')) || [];
+function calc(){
+ let total = 0;
 
-contasStorage = contasStorage.map(c => ({
-    ...c,
-    saldo: safeNumber(c.saldo),
-    investimento: safeNumber(c.investimento),
-    comissao: safeNumber(c.comissao)
-}));
+ data.forEach(c=>{
+  let saldo = safe(c.saldo);
+  let invest = safe(c.invest);
+  let com = safe(c.com);
 
-let db = {
-    contas: contasStorage.length ? contasStorage : [
-        { id: 1, nome: 'BETANO', saldo: 0, investimento: 4000, comissao: 90 }
-    ]
-};
+  let lucro = saldo - invest;
 
-const fmt = (v) => safeNumber(v).toLocaleString('pt-BR', {
-    style: 'currency',
-    currency: 'BRL'
-});
+  let meu = 0;
 
-// salvar
-function salvar() {
-    localStorage.setItem('c_v105', JSON.stringify(db.contas));
-    calcular();
+  // 🔥 REGRA NOVA
+  if(invest > 0){
+    meu = lucro > 0 ? lucro*(com/100) : lucro;
+  }
+
+  total += meu;
+ });
+
+ document.getElementById('total').innerText = fmt(total);
 }
 
-// cálculo correto (LUCRO REAL)
-function calcular() {
-    let totalLucro = 0;
+function render(){
+ let el = document.getElementById('contas');
+ el.innerHTML = '';
 
-    db.contas.forEach(c => {
-        let saldo = safeNumber(c.saldo);
-        let investimento = safeNumber(c.investimento);
-        let comissao = safeNumber(c.comissao);
+ data.forEach(c=>{
+  let saldo = safe(c.saldo);
+  let invest = safe(c.invest);
+  let lucro = saldo - invest;
 
-        let lucroBruto = saldo - investimento;
-        let lucroMeu = lucroBruto > 0
-            ? lucroBruto * (comissao / 100)
-            : lucroBruto;
+  let cor = lucro>=0?'text-green-500':'text-red-500';
 
-        totalLucro += lucroMeu;
-    });
+  el.innerHTML += `
+  <div class="card">
+    <button onclick="del(${c.id})" class="float-right text-red-400">✕</button>
 
-    document.getElementById('exibirLucro').innerText = fmt(totalLucro);
+    <input value="${c.nome}" oninput="upd(${c.id},'nome',this.value)" class="text-blue-500 font-bold w-full mb-3">
+
+    <div class="text-xs text-gray-400 mb-2">
+      Invest:
+      <input value="${fmt(invest)}" oninput="maskInvest(this,${c.id})" onfocus="this.select()" class="w-24">
+
+      Comissão:
+      <input type="number" value="${c.com}" oninput="upd(${c.id},'com',this.value)" class="w-12">%
+    </div>
+
+    <div class="mb-2">
+      Saldo:
+      <input value="${fmt(saldo)}" oninput="maskSaldo(this,${c.id})" onfocus="this.select()" class="text-2xl w-full">
+    </div>
+
+    <div class="${cor} font-bold">${fmt(lucro)}</div>
+
+    ${invest==0 ? '<div class="text-xs text-gray-400 mt-2">Conta de terceiros (não entra no seu lucro)</div>' : ''}
+  </div>
+  `;
+ });
+
+ calc();
 }
 
-// render
-function render() {
-    const container = document.getElementById('listaContas');
-    container.innerHTML = '';
+function upd(id,campo,val){
+ let c = data.find(x=>x.id==id);
+ if(!c) return;
 
-    db.contas.forEach(c => {
-        let saldo = safeNumber(c.saldo);
-        let investimento = safeNumber(c.investimento);
-        let lucro = saldo - investimento;
-
-        const div = document.createElement('div');
-        div.className = 'card-oled';
-
-        div.innerHTML = `
-            <button onclick="apiExcluir(${c.id})" class="float-right text-red-400">✕</button>
-
-            <input value="${c.nome}" 
-                oninput="apiUpdate(${c.id}, 'nome', this.value)" 
-                class="font-bold text-blue-500 w-full mb-3">
-
-            <div class="text-xs text-gray-400 mb-2">
-                Invest:
-                <input 
-                    value="${fmt(investimento)}"
-                    oninput="apiMascaraInvest(this, ${c.id})"
-                    onfocus="this.select()"
-                    class="w-24 text-black font-mono">
-
-                Comissão:
-                <input 
-                    type="number"
-                    value="${c.comissao}"
-                    oninput="apiUpdate(${c.id}, 'comissao', this.value)"
-                    class="w-14">
-                %
-            </div>
-
-            <div class="mb-2">
-                <p class="text-xs text-gray-400">Saldo</p>
-                <input 
-                    value="${fmt(saldo)}"
-                    oninput="apiMascaraSaldo(this, ${c.id})"
-                    onfocus="this.select()"
-                    class="text-2xl font-mono w-full">
-            </div>
-
-            <div class="text-sm font-bold ${lucro >= 0 ? 'text-green-500' : 'text-red-500'}">
-                ${fmt(lucro)}
-            </div>
-        `;
-
-        container.appendChild(div);
-    });
-
-    calcular();
+ c[campo] = campo=='nome' ? val.toUpperCase() : safe(parseFloat(val));
+ salvar();
 }
 
-// update
-window.apiUpdate = (id, campo, valor) => {
-    const item = db.contas.find(x => x.id === id);
-    if (!item) return;
+function maskSaldo(el,id){
+ let v = el.value.replace(/\D/g,'');
+ let n = safe(v/100);
 
-    item[campo] = campo === 'nome'
-        ? valor.toUpperCase()
-        : safeNumber(parseFloat(valor));
+ let c = data.find(x=>x.id==id);
+ if(c) c.saldo = n;
 
-    salvar();
-};
+ el.value = fmt(n);
+ salvar();
+}
 
-// máscara saldo
-window.apiMascaraSaldo = (el, id) => {
-    let v = el.value.replace(/\D/g, '');
-    let n = safeNumber(v / 100);
+function maskInvest(el,id){
+ let v = el.value.replace(/\D/g,'');
+ let n = safe(v/100);
 
-    const item = db.contas.find(x => x.id === id);
-    if (item) item.saldo = n;
+ let c = data.find(x=>x.id==id);
+ if(c) c.invest = n;
 
-    el.value = fmt(n);
-    salvar();
-};
+ el.value = fmt(n);
+ salvar();
+}
 
-// máscara investimento
-window.apiMascaraInvest = (el, id) => {
-    let v = el.value.replace(/\D/g, '');
-    let n = safeNumber(v / 100);
+function del(id){
+ if(confirm('Remover?')){
+  data = data.filter(x=>x.id!=id);
+  salvar();
+  render();
+ }
+}
 
-    const item = db.contas.find(x => x.id === id);
-    if (item) item.investimento = n;
-
-    el.value = fmt(n);
-    salvar();
-};
-
-// excluir
-window.apiExcluir = (id) => {
-    if (confirm("Remover conta?")) {
-        db.contas = db.contas.filter(x => x.id !== id);
-        salvar();
-        render();
-    }
-};
-
-// novo
-document.getElementById('btnNovoCard').onclick = () => {
-    db.contas.push({
-        id: Date.now(),
-        nome: 'NOVA CONTA',
-        saldo: 0,
-        investimento: 0,
-        comissao: 100
-    });
-    salvar();
-    render();
-};
+function novo(){
+ data.push({id:Date.now(),nome:'NOVA',saldo:0,invest:0,com:100});
+ salvar();
+ render();
+}
 
 render();
 </script>
