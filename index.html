@@ -2,15 +2,14 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Bet Dashboard - Comissão v1.1</title>
+    <title>Bet Dashboard - Gestão de Capital v1.2</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
     <style>
         body { background-color: #f8fafc; color: #1e293b; font-family: 'Inter', sans-serif; transition: all 0.5s; overflow-x: hidden; }
-        .body-privado { background-color: #f1f5f9 !important; }
         .card-oled { 
             background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 2rem; 
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: relative; padding: 1.8rem; 
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: relative; padding: 1.5rem; 
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
         }
         .card-oled:hover { border-color: #3b82f6; box-shadow: 0 20px 40px rgba(59, 130, 246, 0.08); transform: translateY(-4px); }
@@ -22,221 +21,165 @@
         }
         .saque-ativo { animation: pulse-gold 2s infinite; border-color: #fbbf24 !important; background: #fffdf2; }
 
-        .barra-progresso { height: 4px; background: #f1f5f9; border-radius: 10px; overflow: hidden; margin-top: 15px; }
-        .progresso-fill { height: 100%; transition: width 1s cubic-bezier(0.4, 0, 0.2, 1); width: 0%; }
-        .barra-vazia { background-color: #cbd5e1; }
-        .barra-ok { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
-        .barra-meta { background: linear-gradient(90deg, #d97706, #fbbf24); }
-
-        input { background: transparent; border-bottom: 2px solid #f1f5f9; outline: none; width: 100%; transition: all 0.3s; font-family: 'JetBrains Mono', monospace; color: #0f172a; }
+        input { background: transparent; border-bottom: 1px solid #f1f5f9; outline: none; transition: all 0.3s; font-family: 'JetBrains Mono', monospace; }
         input:focus { border-color: #3b82f6; }
         
         .valor-privado { filter: blur(14px); opacity: 0.2; pointer-events: none; }
-        .borda-privada { border-top-color: #94a3b8 !important; }
         ::-webkit-scrollbar { width: 0px; background: transparent; }
     </style>
 </head>
 <body class="p-6 md:p-12">
 
     <div class="max-w-7xl mx-auto">
-        <div id="headerDinamico" class="bg-white border border-slate-200 rounded-[2.5rem] p-8 md:p-10 mb-12 border-t-[6px] transition-all shadow-xl shadow-slate-200/50 relative overflow-hidden">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-8 items-center relative z-10">
+        <div id="headerDinamico" class="bg-white border border-slate-200 rounded-[2.5rem] p-8 md:p-10 mb-12 border-t-[6px] transition-all shadow-xl shadow-slate-200/50">
+            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-8 items-center">
                 
-                <div class="lg:col-span-1">
-                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Investimento Total</p>
-                    <input type="text" id="campoBancaBase" class="text-2xl font-bold text-blue-600 tracking-tighter">
+                <div>
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Seu Retorno Total (Líquido)</p>
+                    <p id="exibirLucro" class="text-5xl font-mono font-bold tracking-tighter transition-all text-emerald-500">R$ 0,00</p>
                 </div>
 
-                <div class="lg:col-span-2 flex items-center gap-6">
-                    <div>
-                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Seu Lucro Líquido</p>
-                        <p id="exibirLucro" class="text-5xl font-mono font-bold tracking-tighter transition-all">R$ 0,00</p>
-                    </div>
-                    <div class="flex flex-col items-center border border-slate-100 px-4 py-2 rounded-2xl bg-slate-50">
-                        <span id="emojiSaude" class="text-3xl mb-1">⚖️</span>
-                        <span id="txtStatus" class="text-[9px] font-black uppercase tracking-tighter text-slate-500">Calculando...</span>
-                    </div>
-                </div>
-
-                <div id="containerSaque" class="lg:col-span-1 border border-slate-100 p-5 rounded-[1.5rem] transition-all opacity-30">
-                    <p class="text-[9px] font-black text-amber-600 uppercase tracking-widest mb-1 italic">Total Líquido Saque</p>
+                <div id="containerSaque" class="border border-slate-100 p-5 rounded-[1.5rem] transition-all opacity-30">
+                    <p class="text-[9px] font-black text-amber-600 uppercase tracking-widest mb-1 italic">Disponível p/ seu Saque</p>
                     <p id="exibirSaqueTotal" class="text-2xl font-mono font-bold text-amber-500 tracking-tighter">R$ 0,00</p>
                 </div>
 
-                <div class="lg:col-span-2 flex flex-col gap-3">
-                    <button id="btnNovoCard" class="bg-slate-900 hover:bg-blue-600 text-white py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] active:scale-95 transition-all shadow-lg shadow-slate-300">＋ Adicionar Conta</button>
-                    <div class="flex gap-3">
-                        <button id="btnPrivacidade" class="flex-1 bg-white border border-slate-200 text-slate-500 py-3 rounded-2xl text-[10px] font-bold uppercase hover:bg-slate-50 transition-all">👁️ Privacidade</button>
-                        <button id="btnReset" class="flex-1 bg-red-50 border border-red-100 text-red-500 py-3 rounded-2xl text-[10px] font-bold uppercase hover:bg-red-100 transition-all">Fechar Mês</button>
-                    </div>
+                <div class="lg:col-span-2 flex flex-col sm:flex-row gap-3">
+                    <button id="btnNovoCard" class="flex-1 bg-slate-900 hover:bg-blue-600 text-white py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] transition-all">＋ Nova Conta</button>
+                    <button id="btnPrivacidade" class="bg-white border border-slate-200 text-slate-500 px-6 py-3 rounded-2xl text-[10px] font-bold uppercase hover:bg-slate-50">👁️</button>
+                    <button id="btnReset" class="bg-red-50 text-red-500 px-6 py-3 rounded-2xl text-[10px] font-bold uppercase hover:bg-red-100">Zerar Mês</button>
                 </div>
             </div>
         </div>
 
-        <div id="listaContas" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8"></div>
+        <div id="listaContas" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8"></div>
     </div>
 
     <script>
-        // Mantendo as chaves v105 para não perder seus dados
+        // Estrutura de dados atualizada
         let db = {
-            banca: parseFloat(localStorage.getItem('b_v105')) || 5000,
-            // Adicionado campo 'comissao' para salvar a regra de cada conta
-            contas: JSON.parse(localStorage.getItem('c_v105')) || [{ id: Date.now(), nome: 'BETANO - EVERTON', saldo: 0, comissao: 90 }],
-            memoria: localStorage.getItem('m_v105') || "Sem registros",
+            contas: JSON.parse(localStorage.getItem('c_v105')) || [
+                { id: 1, nome: 'BETANO EVERTON', saldo: 0, investimento: 4000, comissao: 90 },
+                { id: 2, nome: 'GUILHERME', saldo: 0, investimento: 1000, comissao: 100 },
+                { id: 3, nome: 'HINGRID', saldo: 0, investimento: 0, comissao: 50 }
+            ],
             privacidade: false
         };
 
         const fmt = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
         function salvar() {
-            localStorage.setItem('b_v105', db.banca);
             localStorage.setItem('c_v105', JSON.stringify(db.contas));
-            localStorage.setItem('m_v105', db.memoria);
             calcular();
         }
 
         function calcular() {
-            // Cálculo do Lucro LÍQUIDO (considerando a comissão de cada uma)
-            // Se a banca total é 5000 e o saldo total é 6000, o lucro bruto é 1000.
-            // O lucro líquido aplica a porcentagem sobre a fatia de lucro de cada conta.
-            
-            let saldoTotalBruto = db.contas.reduce((acc, c) => acc + c.saldo, 0);
-            let lucroBrutoTotal = saldoTotalBruto - db.banca;
-            
-            let lucroLiquidoTotal = 0;
+            let seuTotalLiquido = 0;
 
-            if (lucroBrutoTotal > 0) {
-                db.contas.forEach(c => {
-                    // Calculamos quanto essa conta representa no lucro bruto proporcionalmente
-                    let proporcao = c.saldo / saldoTotalBruto;
-                    let lucroDestaConta = lucroBrutoTotal * proporcao;
-                    // Aplica a comissão (ex: 90% para você)
-                    lucroLiquidoTotal += (lucroDestaConta * (c.comissao / 100));
-                });
-            } else {
-                lucroLiquidoTotal = lucroBrutoTotal; // Em caso de perda, a perda é sua (ou proporcional)
-            }
+            db.contas.forEach(c => {
+                let lucroBruto = c.saldo - c.investimento;
+                let lucroParaMim = 0;
 
-            const pct = db.banca > 0 ? (lucroLiquidoTotal / db.banca) * 100 : 0;
+                if (lucroBruto > 0) {
+                    lucroParaMim = lucroBruto * (c.comissao / 100);
+                } else {
+                    lucroParaMim = lucroBruto; // Se houver perda, ela abate do seu total
+                }
+
+                // O que volta para você: Seu investimento (se foi você quem colocou) + Sua parte do lucro
+                // Nota: Se o investimento foi da pessoa (Hingrid), você deve considerar investimento dela como 0 no seu cálculo de retorno de capital
+                seuTotalLiquido += (c.investimento > 0 ? c.investimento : 0) + lucroParaMim;
+            });
 
             const elLucro = document.getElementById('exibirLucro');
             const elSaque = document.getElementById('exibirSaqueTotal');
-            const elHeader = document.getElementById('headerDinamico');
             const boxSaque = document.getElementById('containerSaque');
             
-            elLucro.innerText = fmt(lucroLiquidoTotal);
-            
-            if (db.privacidade) {
-                elLucro.className = "text-5xl font-mono font-bold tracking-tighter valor-privado";
-                elHeader.classList.add('borda-privada');
-                document.body.classList.add('body-privado');
-                boxSaque.classList.remove('saque-ativo');
-                boxSaque.style.opacity = "0.1";
-            } else {
-                document.body.classList.remove('body-privado');
-                elHeader.classList.remove('borda-privada');
-                
-                let cor = lucroLiquidoTotal >= 0 ? "text-emerald-500" : "text-red-500";
-                let emoji = lucroLiquidoTotal >= 0 ? "📈" : "⚠️";
-                let status = lucroLiquidoTotal >= 0 ? "Lucro Líquido" : "Recuperar";
-                
-                elLucro.className = `text-5xl font-mono font-bold tracking-tighter ${cor}`;
-                elHeader.style.borderTopColor = lucroLiquidoTotal >= 0 ? "#10b981" : "#ef4444";
-                document.getElementById('emojiSaude').innerText = emoji;
-                document.getElementById('txtStatus').innerText = status;
-                document.getElementById('txtStatus').className = `text-[9px] font-black uppercase tracking-tighter ${cor}`;
-                
-                if (lucroLiquidoTotal > 0) {
-                    elSaque.innerText = fmt(lucroLiquidoTotal);
-                    boxSaque.classList.add('saque-ativo');
-                    boxSaque.style.opacity = "1";
-                } else {
-                    elSaque.innerText = "R$ 0,00";
-                    boxSaque.classList.remove('saque-ativo');
-                    boxSaque.style.opacity = "0.3";
-                }
-            }
-            atualizarBarras();
-        }
+            elLucro.innerText = fmt(seuTotalLiquido);
+            elSaque.innerText = fmt(seuTotalLiquido);
 
-        function atualizarBarras() {
-            db.contas.forEach(c => {
-                const f = document.getElementById('fill-' + c.id);
-                if (f) {
-                    const p = db.banca > 0 ? (c.saldo / db.banca) * 100 : 0;
-                    f.style.width = Math.min(p, 100) + '%';
-                    f.className = 'progresso-fill ' + (c.saldo === 0 ? 'barra-vazia' : 'barra-ok');
-                }
-            });
+            if (seuTotalLiquido > 0) {
+                boxSaque.classList.add('saque-ativo');
+                boxSaque.style.opacity = "1";
+            } else {
+                boxSaque.classList.remove('saque-ativo');
+                boxSaque.style.opacity = "0.3";
+            }
+
+            if (db.privacidade) {
+                elLucro.classList.add('valor-privado');
+                elSaque.classList.add('valor-privado');
+            } else {
+                elLucro.classList.remove('valor-privado');
+                elSaque.classList.remove('valor-privado');
+            }
         }
 
         function render() {
             const container = document.getElementById('listaContas');
             container.innerHTML = '';
             db.contas.forEach(c => {
+                const lucro = c.saldo - c.investimento;
+                const corLucro = lucro >= 0 ? 'text-emerald-500' : 'text-red-500';
+                
                 const div = document.createElement('div');
                 div.className = 'card-oled';
-                // Adicionado input para "Sua Parte %"
                 div.innerHTML = `
-                    <button class="absolute top-6 right-6 text-slate-300 hover:text-red-500 transition-colors" onclick="apiExcluir(${c.id})">✕</button>
-                    <div class="flex justify-between items-start mb-5">
-                        <p class="text-[10px] text-blue-500 font-black uppercase tracking-[0.2em] italic cursor-pointer hover:text-blue-700 transition-colors" onclick="apiRenomear(${c.id})">${c.nome} ✏️</p>
-                        <div class="text-right">
-                            <p class="text-[8px] text-slate-400 font-bold uppercase">Sua Parte</p>
-                            <input type="number" value="${c.comissao || 100}" oninput="apiComissao(this, ${c.id})" class="text-xs font-bold text-slate-600 border-none w-10 text-right focus:ring-0"> <span class="text-[10px] text-slate-400">%</span>
+                    <button class="absolute top-4 right-4 text-slate-300 hover:text-red-500" onclick="apiExcluir(${c.id})">✕</button>
+                    
+                    <div class="mb-4">
+                        <input type="text" value="${c.nome}" oninput="apiUpdate(${c.id}, 'nome', this.value)" class="text-xs font-black uppercase text-blue-500 border-none w-full mb-1">
+                        <div class="flex gap-4 text-[10px] font-bold text-slate-400 uppercase">
+                            <span>Invest: <input type="number" value="${c.investimento}" oninput="apiUpdate(${c.id}, 'investimento', this.value)" class="w-12 border-none text-slate-600 focus:ring-0"></span>
+                            <span>Sua Parte: <input type="number" value="${c.comissao}" oninput="apiUpdate(${c.id}, 'comissao', this.value)" class="w-8 border-none text-slate-600 focus:ring-0">%</span>
                         </div>
                     </div>
-                    <input type="text" value="${fmt(c.saldo)}" oninput="apiMascara(this, ${c.id})" onfocus="this.select()" class="${db.privacidade ? 'valor-privado' : ''} text-3xl text-slate-800 pb-3 font-mono font-bold tracking-tighter">
-                    <div class="barra-progresso"><div class="progresso-fill" id="fill-${c.id}"></div></div>
+
+                    <div class="mb-2">
+                        <p class="text-[9px] uppercase font-bold text-slate-400">Saldo Atual</p>
+                        <input type="text" value="${fmt(c.saldo)}" oninput="apiMascara(this, ${c.id})" onfocus="this.select()" class="${db.privacidade ? 'valor-privado' : ''} text-3xl text-slate-800 font-mono font-bold w-full">
+                    </div>
+
+                    <div class="flex justify-between items-center pt-2 border-t border-slate-50">
+                        <span class="text-[10px] font-bold text-slate-400">LUCRO DA CONTA:</span>
+                        <span class="text-sm font-mono font-bold ${corLucro}">${fmt(lucro)}</span>
+                    </div>
                 `;
                 container.appendChild(div);
             });
             calcular();
         }
 
-        window.apiComissao = (el, id) => {
+        window.apiUpdate = (id, campo, valor) => {
             const item = db.contas.find(x => x.id === id);
-            if(item) item.comissao = parseFloat(el.value) || 0;
+            if(item) item[campo] = campo === 'nome' ? valor.toUpperCase() : parseFloat(valor) || 0;
             salvar();
         };
 
         window.apiMascara = (el, id) => {
             let v = el.value.replace(/\D/g, '');
             let n = parseFloat((v / 100).toFixed(2)) || 0;
-            if(id === 'BANCA') db.banca = n;
-            else {
-                const item = db.contas.find(x => x.id === id);
-                if(item) item.saldo = n;
-            }
+            const item = db.contas.find(x => x.id === id);
+            if(item) item.saldo = n;
             el.value = fmt(n);
             salvar();
         };
 
-        window.apiRenomear = (id) => {
-            let n = prompt("Nome da conta:");
-            if(n) { db.contas.find(x => x.id === id).nome = n.toUpperCase(); salvar(); render(); }
-        };
-
         window.apiExcluir = (id) => {
-            if(confirm("Remover esta conta?")) { db.contas = db.contas.filter(x => x.id !== id); salvar(); render(); }
+            if(confirm("Remover conta?")) { db.contas = db.contas.filter(x => x.id !== id); salvar(); render(); }
         };
 
         document.getElementById('btnNovoCard').onclick = () => {
-            db.contas.push({ id: Date.now(), nome: 'NOVA CONTA', saldo: 0, comissao: 100 });
+            db.contas.push({ id: Date.now(), nome: 'NOVA CONTA', saldo: 0, investimento: 0, comissao: 100 });
             salvar(); render();
         };
 
         document.getElementById('btnPrivacidade').onclick = () => { db.privacidade = !db.privacidade; render(); };
 
         document.getElementById('btnReset').onclick = () => {
-             if(confirm("Isso zerará os saldos das contas para um novo ciclo. Confirmar?")) {
-                db.contas.forEach(c => c.saldo = 0);
-                salvar(); render();
-             }
+            if(confirm("Zerar saldos?")) { db.contas.forEach(c => c.saldo = 0); salvar(); render(); }
         };
 
-        document.getElementById('campoBancaBase').oninput = function() { apiMascara(this, 'BANCA'); };
-        document.getElementById('campoBancaBase').value = fmt(db.banca);
         render();
     </script>
 </body>
