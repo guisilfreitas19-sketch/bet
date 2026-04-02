@@ -2,7 +2,7 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<title>Bet Dashboard Profissional v2.0</title>
+<title>Bet Dashboard Profissional v3.0</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
@@ -11,8 +11,8 @@
 body { background:#f8fafc; font-family:Inter; }
 .card { background:#fff; border:1px solid #e2e8f0; border-radius:24px; padding:20px; transition:.2s; }
 .card:hover { border-color:#3b82f6; transform:translateY(-3px); }
-input { border-bottom:1px solid #e2e8f0; font-family:'JetBrains Mono'; }
-input:focus { outline:none; border-color:#3b82f6; }
+input, select { border-bottom:1px solid #e2e8f0; font-family:'JetBrains Mono'; }
+input:focus, select:focus { outline:none; border-color:#3b82f6; }
 .select-type { border:1px solid #e2e8f0; border-radius:12px; padding:2px 8px; font-size:12px; }
 </style>
 </head>
@@ -37,9 +37,9 @@ function safe(n){ return isNaN(n) ? 0 : Number(n); }
 
 // Estrutura de dados
 let data = JSON.parse(localStorage.getItem('db')) || [
- {id:1,nome:'EVERTON',saldo:3400,invest:4000,com:90,tipo:'SEU'},
- {id:2,nome:'GUILHERME',saldo:1050,invest:1000,com:100,tipo:'SOCIEDADE'},
- {id:3,nome:'HINGRID',saldo:1000,invest:0,com:50,tipo:'GESTAO'}
+ {id:1,nome:'EVERTON',saldo:3400,invest:4000,com:90,tipo:'SEU',dono:'VOCE'},
+ {id:2,nome:'GUILHERME',saldo:1050,invest:1000,com:100,tipo:'SOCIEDADE',dono:'VOCE'},
+ {id:3,nome:'HINGRID',saldo:1000,invest:0,com:50,tipo:'GESTAO',dono:'HINGRID'}
 ];
 
 const fmt = v => safe(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
@@ -62,11 +62,9 @@ function calc(){
   let lucro = saldo - invest;
   let meu = 0;
 
-  if(c.tipo === 'SEU'){           // Seu dinheiro
+  if(c.dono.toUpperCase() === 'VOCE'){  // Seu dinheiro
     meu = lucro > 0 ? lucro*(com/100) : lucro;
-  } else if(c.tipo === 'SOCIEDADE'){ // Sociedade
-    meu = lucro > 0 ? lucro*(com/100) : 0;
-  } else if(c.tipo === 'GESTAO'){ // Gestão de terceiros
+  } else { // Dinheiro de terceiros
     meu = lucro > 0 ? lucro*(com/100) : 0;
   }
 
@@ -92,7 +90,7 @@ function render(){
     <button onclick="del(${c.id})" class="float-right text-red-400">✕</button>
 
     <input value="${c.nome}" oninput="upd(${c.id},'nome',this.value)" 
-        class="text-blue-500 font-bold w-full mb-3">
+        class="text-blue-500 font-bold w-full mb-2">
 
     <div class="flex justify-between items-center text-xs text-gray-400 mb-2">
       <div>
@@ -103,6 +101,9 @@ function render(){
         Comissão:
         <input type="number" value="${c.com}" oninput="upd(${c.id},'com',this.value)" class="w-12">%
       </div>
+    </div>
+
+    <div class="flex justify-between items-center text-xs text-gray-400 mb-2">
       <div>
         Tipo:
         <select class="select-type" onchange="upd(${c.id},'tipo',this.value)">
@@ -110,6 +111,10 @@ function render(){
           <option ${c.tipo==='SOCIEDADE'?'selected':''}>SOCIEDADE</option>
           <option ${c.tipo==='GESTAO'?'selected':''}>GESTAO</option>
         </select>
+      </div>
+      <div>
+        Dono do dinheiro:
+        <input value="${c.dono}" oninput="upd(${c.id},'dono',this.value)" class="w-24">
       </div>
     </div>
 
@@ -120,8 +125,7 @@ function render(){
 
     <div class="${cor} font-bold">${fmt(lucro)}</div>
 
-    ${c.tipo==='SOCIEDADE'?'<div class="text-xs text-blue-500 mt-2">Sociedade (você ganha % do lucro)</div>':''}
-    ${c.tipo==='GESTAO'?'<div class="text-xs text-amber-500 mt-2">Gestão de terceiros (você ganha % do lucro)</div>':''}
+    ${c.dono.toUpperCase()!=='VOCE'?'<div class="text-xs text-amber-500 mt-2">Dinheiro de terceiros (você só ganha % do lucro)</div>':''}
   </div>
   `;
  });
@@ -134,7 +138,7 @@ function upd(id,campo,val){
  let c = data.find(x=>x.id==id);
  if(!c) return;
 
- c[campo] = campo=='nome' ? val.toUpperCase() : val;
+ c[campo] = campo=='nome' || campo=='dono' ? val.toUpperCase() : val;
  salvar();
 }
 
@@ -172,7 +176,7 @@ function del(id){
 
 // Nova conta
 function novo(){
- data.push({id:Date.now(),nome:'NOVA CONTA',saldo:0,invest:0,com:100,tipo:'SEU'});
+ data.push({id:Date.now(),nome:'NOVA CONTA',saldo:0,invest:0,com:100,tipo:'SEU',dono:'VOCE'});
  salvar();
  render();
 }
