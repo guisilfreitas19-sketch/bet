@@ -2,25 +2,25 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<title>Bet Dashboard Profissional v3.0</title>
+<title>Bet Dashboard Profissional v3.1</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
 
 <style>
 body { background:#f8fafc; font-family:Inter; }
-.card { background:#fff; border:1px solid #e2e8f0; border-radius:24px; padding:20px; transition:.2s; }
+.card { background:#fff; border:1px solid #e2e8f0; border-radius:24px; padding:20px; transition:.2s; position:relative; }
 .card:hover { border-color:#3b82f6; transform:translateY(-3px); }
-input, select { border-bottom:1px solid #e2e8f0; font-family:'JetBrains Mono'; }
+input, select { border-bottom:1px solid #e2e8f0; font-family:'JetBrains Mono'; padding:2px 4px; }
 input:focus, select:focus { outline:none; border-color:#3b82f6; }
-.select-type { border:1px solid #e2e8f0; border-radius:12px; padding:2px 8px; font-size:12px; }
+.select-type { border:1px solid #e2e8f0; border-radius:12px; padding:2px 6px; font-size:12px; }
+.remove-btn { position:absolute; top:12px; right:12px; color:#f87171; cursor:pointer; font-weight:bold; }
 </style>
 </head>
 
 <body class="p-8">
 
 <div class="max-w-6xl mx-auto">
-
 <p class="text-xs text-gray-400 mb-2">SEU LUCRO LÍQUIDO</p>
 <h1 id="total" class="text-5xl text-emerald-500 font-mono mb-10">R$ 0,00</h1>
 
@@ -29,13 +29,11 @@ input:focus, select:focus { outline:none; border-color:#3b82f6; }
 </button>
 
 <div id="contas" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
-
 </div>
 
 <script>
-function safe(n){ return isNaN(n) ? 0 : Number(n); }
+function safe(n){ return isNaN(n)?0:Number(n); }
 
-// Estrutura de dados
 let data = JSON.parse(localStorage.getItem('db')) || [
  {id:1,nome:'EVERTON',saldo:3400,invest:4000,com:90,tipo:'SEU',dono:'VOCE'},
  {id:2,nome:'GUILHERME',saldo:1050,invest:1000,com:100,tipo:'SOCIEDADE',dono:'VOCE'},
@@ -44,55 +42,34 @@ let data = JSON.parse(localStorage.getItem('db')) || [
 
 const fmt = v => safe(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 
-// Salvar no localStorage
-function salvar(){
- localStorage.setItem('db',JSON.stringify(data));
- calc();
-}
+function salvar(){ localStorage.setItem('db',JSON.stringify(data)); calc(); }
 
-// Cálculo de lucro automático
 function calc(){
  let total = 0;
-
  data.forEach(c=>{
-  let saldo = safe(c.saldo);
-  let invest = safe(c.invest);
-  let com = safe(c.com);
-
-  let lucro = saldo - invest;
-  let meu = 0;
-
-  if(c.dono.toUpperCase() === 'VOCE'){  // Seu dinheiro
-    meu = lucro > 0 ? lucro*(com/100) : lucro;
-  } else { // Dinheiro de terceiros
-    meu = lucro > 0 ? lucro*(com/100) : 0;
-  }
-
+  let saldo = safe(c.saldo), invest = safe(c.invest), com = safe(c.com);
+  let lucro = saldo - invest, meu = 0;
+  if(c.dono.toUpperCase()==='VOCE'){ meu = lucro>0?lucro*(com/100):lucro; }
+  else { meu = lucro>0?lucro*(com/100):0; }
   total += meu;
  });
-
  document.getElementById('total').innerText = fmt(total);
 }
 
-// Renderização das contas
 function render(){
- let el = document.getElementById('contas');
- el.innerHTML = '';
-
+ let el = document.getElementById('contas'); el.innerHTML='';
  data.forEach(c=>{
-  let saldo = safe(c.saldo);
-  let invest = safe(c.invest);
-  let lucro = saldo - invest;
+  let saldo = safe(c.saldo), invest = safe(c.invest), lucro = saldo - invest;
   let cor = lucro>=0?'text-green-500':'text-red-500';
 
   el.innerHTML += `
   <div class="card">
-    <button onclick="del(${c.id})" class="float-right text-red-400">✕</button>
+    <span class="remove-btn" onclick="del(${c.id})">✕</span>
 
     <input value="${c.nome}" oninput="upd(${c.id},'nome',this.value)" 
-        class="text-blue-500 font-bold w-full mb-2">
+      class="text-blue-500 font-bold w-full mb-2">
 
-    <div class="flex justify-between items-center text-xs text-gray-400 mb-2">
+    <div class="flex justify-between text-xs text-gray-400 mb-2 gap-2 flex-wrap">
       <div>
         Invest:
         <input value="${fmt(invest)}" oninput="maskInvest(this,${c.id})" onfocus="this.select()" class="w-24">
@@ -103,7 +80,7 @@ function render(){
       </div>
     </div>
 
-    <div class="flex justify-between items-center text-xs text-gray-400 mb-2">
+    <div class="flex justify-between text-xs text-gray-400 mb-2 gap-2 flex-wrap">
       <div>
         Tipo:
         <select class="select-type" onchange="upd(${c.id},'tipo',this.value)">
@@ -129,57 +106,30 @@ function render(){
   </div>
   `;
  });
-
  calc();
 }
 
-// Atualização de campos
 function upd(id,campo,val){
- let c = data.find(x=>x.id==id);
+ let c=data.find(x=>x.id==id);
  if(!c) return;
-
- c[campo] = campo=='nome' || campo=='dono' ? val.toUpperCase() : val;
+ c[campo] = campo==='nome'||campo==='dono'?val.toUpperCase():val;
  salvar();
 }
 
-// Máscaras
 function maskSaldo(el,id){
- let v = el.value.replace(/\D/g,'');
- let n = safe(v/100);
-
- let c = data.find(x=>x.id==id);
- if(c) c.saldo = n;
-
- el.value = fmt(n);
- salvar();
+ let v=el.value.replace(/\D/g,''); let n=safe(v/100);
+ let c = data.find(x=>x.id==id); if(c) c.saldo=n;
+ el.value=fmt(n); salvar();
 }
 
 function maskInvest(el,id){
- let v = el.value.replace(/\D/g,'');
- let n = safe(v/100);
-
- let c = data.find(x=>x.id==id);
- if(c) c.invest = n;
-
- el.value = fmt(n);
- salvar();
+ let v=el.value.replace(/\D/g,''); let n=safe(v/100);
+ let c = data.find(x=>x.id==id); if(c) c.invest=n;
+ el.value=fmt(n); salvar();
 }
 
-// Deletar
-function del(id){
- if(confirm('Remover conta?')){
-  data = data.filter(x=>x.id!=id);
-  salvar();
-  render();
- }
-}
-
-// Nova conta
-function novo(){
- data.push({id:Date.now(),nome:'NOVA CONTA',saldo:0,invest:0,com:100,tipo:'SEU',dono:'VOCE'});
- salvar();
- render();
-}
+function del(id){ if(confirm('Remover conta?')){ data=data.filter(x=>x.id!=id); salvar(); render(); } }
+function novo(){ data.push({id:Date.now(),nome:'NOVA CONTA',saldo:0,invest:0,com:100,tipo:'SEU',dono:'VOCE'}); salvar(); render(); }
 
 render();
 </script>
