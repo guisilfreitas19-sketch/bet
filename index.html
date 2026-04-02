@@ -1,156 +1,245 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-<meta charset="UTF-8">
-<title>Bet Dashboard Profissional v4.3</title>
-
-<script src="https://cdn.tailwindcss.com"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
-
-<style>
-body { background:#f8fafc; font-family:Inter; }
-.card { background:#fff; border-radius:1.5rem; padding:1.5rem; transition:.3s; position:relative; display:flex; flex-direction:column; justify-content:space-between; border:1px solid #e2e8f0; }
-.card:hover { transform:translateY(-4px); border-color:#3b82f6; box-shadow:0 10px 30px rgba(59,130,246,0.1); }
-.remove-btn { position:absolute; top:12px; right:12px; color:#f87171; cursor:pointer; font-weight:bold; }
-input, select { font-family:'JetBrains Mono'; padding:2px 6px; border:1px solid #e2e8f0; border-radius:8px; width:100%; }
-input:focus, select:focus { outline:none; border-color:#3b82f6; }
-.select-type { padding:2px 6px; font-size:12px; }
-.card-header, .card-footer { display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem; flex-wrap:wrap; gap:4px; }
-.card-body { display:flex; justify-content:space-between; gap:1rem; margin-bottom:0.5rem; flex-wrap:wrap; }
-.text-lucro { font-family:'JetBrains Mono'; font-weight:700; font-size:1.25rem; }
-.tipo-seu { border-left:4px solid #10b981; padding-left:0.5rem; }
-.tipo-sociedade { border-left:4px solid #3b82f6; padding-left:0.5rem; }
-.tipo-gestao { border-left:4px solid #f59e0b; padding-left:0.5rem; }
-.legend { display:flex; gap:1rem; margin-bottom:1rem; flex-wrap:wrap; font-size:12px; }
-.legend span { display:flex; align-items:center; gap:0.25rem; }
-.legend .block { width:12px; height:12px; display:inline-block; border-radius:2px; }
-.block-seu { background:#10b981; }
-.block-sociedade { background:#3b82f6; }
-.block-gestao { background:#f59e0b; }
-</style>
+    <meta charset="UTF-8" />
+    <title>Bet Dashboard - Gestão de Capital v1.3</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet" />
+    <style>
+        body {
+            background-color: #f8fafc;
+            color: #1e293b;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.5s;
+            overflow-x: hidden;
+        }
+        .card-oled {
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 2rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            padding: 1.5rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+        }
+        .card-oled:hover {
+            border-color: #3b82f6;
+            box-shadow: 0 20px 40px rgba(59, 130, 246, 0.08);
+            transform: translateY(-4px);
+        }
+        @keyframes pulse-gold {
+            0% {
+                box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.3);
+            }
+            70% {
+                box-shadow: 0 0 25px 10px rgba(245, 158, 11, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
+            }
+        }
+        .saque-ativo {
+            animation: pulse-gold 2s infinite;
+            border-color: #fbbf24 !important;
+            background: #fffdf2;
+        }
+        input {
+            background: transparent;
+            border-bottom: 1px solid #f1f5f9;
+            outline: none;
+            transition: all 0.3s;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        input:focus {
+            border-color: #3b82f6;
+        }
+        .valor-privado {
+            filter: blur(14px);
+            opacity: 0.2;
+            pointer-events: none;
+        }
+        ::-webkit-scrollbar {
+            width: 0px;
+            background: transparent;
+        }
+        .legend-color {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            margin-right: 0.5rem;
+            vertical-align: middle;
+            border-radius: 4px;
+        }
+        .legend-seu {
+            background-color: #059669; /* emerald-600 */
+        }
+        .legend-sociedade {
+            background-color: #3b82f6; /* blue-500 */
+        }
+        .legend-gestao {
+            background-color: #f59e0b; /* amber-500 */
+        }
+    </style>
 </head>
+<body class="p-6 md:p-12">
+    <div class="max-w-7xl mx-auto">
 
-<body class="p-8">
-
-<div class="max-w-6xl mx-auto">
-<p class="text-xs text-gray-400 mb-2">SEU LUCRO LÍQUIDO</p>
-<h1 id="total" class="text-5xl text-emerald-500 font-mono mb-4">R$ 0,00</h1>
-
-<div class="legend">
-  <span><span class="block block-seu"></span> SEU: dinheiro que você colocou, você recebe todo lucro proporcional à comissão</span>
-  <span><span class="block block-sociedade"></span> SOCIEDADE: dinheiro de terceiros que você administra, recebe apenas % do lucro</span>
-  <span><span class="block block-gestao"></span> GESTÃO: dinheiro de terceiros que você gere, você ganha % do lucro conforme acordado</span>
-</div>
-
-<button id="btnNovo" class="bg-black text-white px-6 py-3 rounded-xl mb-6 text-xs font-bold">
-+ NOVA CONTA
-</button>
-
-<div id="contas" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
-</div>
-
-<script>
-const safe = n => isNaN(n)?0:Number(n);
-
-// Inicializa dados
-let data = JSON.parse(localStorage.getItem('db'));
-if(!data) {
-  data = [
-    {id:1,nome:'EVERTON',saldo:3400,invest:4000,com:90,tipo:'SEU',dono:'VOCE'},
-    {id:2,nome:'GUILHERME',saldo:1050,invest:1000,com:100,tipo:'SOCIEDADE',dono:'VOCE'},
-    {id:3,nome:'HINGRID',saldo:1000,invest:0,com:50,tipo:'GESTAO',dono:'HINGRID'}
-  ];
-  localStorage.setItem('db',JSON.stringify(data));
-}
-
-const fmt = v => safe(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-
-function salvar(){
-  localStorage.setItem('db',JSON.stringify(data));
-  calc();
-}
-
-function calc(){
-  let total = 0;
-  data.forEach(c=>{
-    let saldo = safe(c.saldo), invest = safe(c.invest), com = safe(c.com);
-    let lucro = saldo - invest;
-    let meu = 0;
-    if(c.dono.toUpperCase()==='VOCE') meu = lucro>0?lucro*(com/100):lucro;
-    else meu = lucro>0?lucro*(com/100):0;
-    total += meu;
-  });
-  document.getElementById('total').innerText = fmt(total);
-}
-
-function render(){
-  const el = document.getElementById('contas'); 
-  el.innerHTML='';
-  data.forEach(c=>{
-    const saldo = safe(c.saldo), invest = safe(c.invest), lucro = saldo-invest;
-    const cor = lucro>=0?'text-green-500':'text-red-500';
-    const tipoClass = c.tipo==='SEU'?'tipo-seu':(c.tipo==='SOCIEDADE'?'tipo-sociedade':'tipo-gestao');
-
-    const card = document.createElement('div');
-    card.className = `card ${tipoClass}`;
-    card.innerHTML = `
-      <span class="remove-btn">✕</span>
-
-      <div class="card-header">
-        <input value="${c.nome}" class="text-blue-500 font-bold w-full">
-      </div>
-
-      <div class="card-body">
-        <div>Invest: <input value="${fmt(invest)}"></div>
-        <div>Comissão: <input type="number" value="${c.com}" class="w-12">%</div>
-      </div>
-
-      <div class="card-body">
-        <div>Tipo: 
-          <select class="select-type">
-            <option ${c.tipo==='SEU'?'selected':''}>SEU</option>
-            <option ${c.tipo==='SOCIEDADE'?'selected':''}>SOCIEDADE</option>
-            <option ${c.tipo==='GESTAO'?'selected':''}>GESTAO</option>
-          </select>
+        <div id="headerDinamico" class="bg-white border border-slate-200 rounded-[2.5rem] p-8 md:p-10 mb-8 border-t-[6px] transition-all shadow-xl shadow-slate-200/50">
+            <div>
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Seu Lucro Líquido</p>
+                <p id="exibirLucro" class="text-5xl font-mono font-bold tracking-tighter transition-all text-emerald-500">R$ 0,00</p>
+            </div>
+            <div class="mt-6 space-y-2 text-sm max-w-4xl">
+                <p><span class="legend-color legend-seu"></span><strong>SEU:</strong> dinheiro que você colocou, você recebe todo lucro proporcional à comissão.</p>
+                <p><span class="legend-color legend-sociedade"></span><strong>SOCIEDADE:</strong> dinheiro de terceiros que você administra, recebe apenas % do lucro.</p>
+                <p><span class="legend-color legend-gestao"></span><strong>GESTÃO:</strong> dinheiro de terceiros que você gere, você ganha % do lucro conforme acordado.</p>
+            </div>
         </div>
-        <div>Dono: <input value="${c.dono}"></div>
-      </div>
 
-      <div class="card-body">Saldo: <input value="${fmt(saldo)}" class="text-2xl w-full"></div>
-      <div class="card-footer ${cor} text-lucro">${fmt(lucro)}</div>
-      ${c.dono.toUpperCase()!=='VOCE'?'<div class="text-xs text-amber-500 mt-2">Dinheiro de terceiros (você só ganha % do lucro)</div>':''}
-    `;
+        <button id="btnNovoCard" class="bg-black text-white px-6 py-3 rounded-2xl text-[13px] font-black uppercase tracking-widest hover:bg-blue-700 mb-8">＋ Nova Conta</button>
 
-    // Eventos
-    card.querySelector('.remove-btn').onclick = ()=>{ del(c.id); };
-    const inputs = card.querySelectorAll('input');
-    inputs[0].oninput = e=>{ c.nome=e.target.value.toUpperCase(); salvar(); };
-    inputs[1].oninput = e=>{ c.invest = safe(e.target.value.replace(/\D/g,''))/100; salvar(); render(); };
-    inputs[2].oninput = e=>{ c.com = safe(e.target.value); salvar(); render(); };
-    inputs[3].oninput = e=>{ c.dono = e.target.value.toUpperCase(); salvar(); };
-    inputs[4].oninput = e=>{ c.saldo = safe(e.target.value.replace(/\D/g,''))/100; salvar(); render(); };
+        <div id="listaContas" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8"></div>
+    </div>
 
-    card.querySelector('select').onchange = e=>{ c.tipo=e.target.value; salvar(); render(); };
+    <script>
+        const fmt = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-    el.appendChild(card);
-  });
-  calc();
-}
+        // Inicia banco com dados do localStorage ou valores padrão
+        let db = JSON.parse(localStorage.getItem('db'));
+        if (!Array.isArray(db) || db.length === 0) {
+            db = [
+                { id: 1, nome: 'EVERTON', saldo: 3400, invest: 4000, com: 90, tipo: 'SEU', dono: 'VOCÊ' },
+                { id: 2, nome: 'GUILHERME', saldo: 1050, invest: 1000, com: 100, tipo: 'SOCIEDADE', dono: 'VOCÊ' },
+                { id: 3, nome: 'HINGRID', saldo: 1000, invest: 0, com: 50, tipo: 'GESTÃO', dono: 'HINGRID' }
+            ];
+            localStorage.setItem('db', JSON.stringify(db));
+        }
 
-function del(id){
-  if(confirm('Remover conta?')){
-    data = data.filter(x=>x.id!=id);
-    salvar(); render();
-  }
-}
+        function salvar() {
+            localStorage.setItem('db', JSON.stringify(db));
+            calcular();
+        }
 
-document.getElementById('btnNovo').onclick = ()=>{
-  data.push({id:Date.now(),nome:'NOVA CONTA',saldo:0,invest:0,com:100,tipo:'SEU',dono:'VOCE'});
-  salvar(); render();
-}
+        function calcular() {
+            let lucroLiquido = 0;
 
-render();
-</script>
+            db.forEach(c => {
+                const lucroBruto = c.saldo - c.invest;
+                let meuLucro = 0;
 
+                if (c.tipo === 'SEU') {
+                    // Você recebe seu investimento + sua comissão sobre o lucro
+                    meuLucro = c.invest + (lucroBruto > 0 ? lucroBruto * (c.com / 100) : lucroBruto);
+                } else if (c.tipo === 'SOCIEDADE') {
+                    // Você não investiu, só recebe comissão sobre lucro positivo
+                    meuLucro = lucroBruto > 0 ? lucroBruto * (c.com / 100) : lucroBruto;
+                } else if (c.tipo === 'GESTÃO') {
+                    // Você só ganha comissão sobre lucro positivo, não o investimento
+                    meuLucro = lucroBruto > 0 ? lucroBruto * (c.com / 100) : lucroBruto;
+                }
+                lucroLiquido += meuLucro;
+            });
+
+            const elLucro = document.getElementById('exibirLucro');
+            elLucro.innerText = fmt(lucroLiquido);
+
+            // Opção de ocultar valores privada - remova se não quiser
+            // (Aqui não implementei botão privacidade para simplificar)
+        }
+
+        function render() {
+            const container = document.getElementById('listaContas');
+            container.innerHTML = '';
+            db.forEach(c => {
+                const lucroBruto = c.saldo - c.invest;
+                const corLucro = lucroBruto >= 0 ? 'text-emerald-500' : 'text-red-500';
+
+                const div = document.createElement('div');
+                div.className = 'card-oled';
+                div.innerHTML = `
+                    <button class="absolute top-4 right-4 text-slate-300 hover:text-red-500" onclick="excluirConta(${c.id})">✕</button>
+                    <div class="mb-4">
+                        <input type="text" value="${c.nome}" oninput="atualizarConta(${c.id}, 'nome', this.value)" class="text-xs font-black uppercase text-blue-500 border-none w-full mb-1" />
+                        <div class="flex gap-4 text-[10px] font-bold text-slate-400 uppercase">
+                            <span>Invest: <input type="number" value="${c.invest}" oninput="atualizarConta(${c.id}, 'invest', this.value)" class="w-20 border-none text-slate-600 focus:ring-0" /></span>
+                            <span>Comissão: <input type="number" value="${c.com}" oninput="atualizarConta(${c.id}, 'com', this.value)" class="w-12 border-none text-slate-600 focus:ring-0" />%</span>
+                        </div>
+                        <div class="mt-2 flex gap-2 items-center text-xs">
+                            <label for="tipo-${c.id}" class="uppercase font-bold text-slate-400">Tipo:</label>
+                            <select id="tipo-${c.id}" onchange="atualizarConta(${c.id}, 'tipo', this.value)" class="border border-slate-300 rounded px-2 py-1 text-xs font-bold uppercase text-slate-600">
+                                <option value="SEU" ${c.tipo === 'SEU' ? 'selected' : ''}>SEU</option>
+                                <option value="SOCIEDADE" ${c.tipo === 'SOCIEDADE' ? 'selected' : ''}>SOCIEDADE</option>
+                                <option value="GESTÃO" ${c.tipo === 'GESTÃO' ? 'selected' : ''}>GESTÃO</option>
+                            </select>
+                            <label for="dono-${c.id}" class="uppercase font-bold text-slate-400 ml-4">Dono:</label>
+                            <input type="text" id="dono-${c.id}" value="${c.dono}" oninput="atualizarConta(${c.id}, 'dono', this.value)" class="border border-slate-300 rounded px-2 py-1 text-xs font-bold uppercase text-slate-600 w-24" />
+                        </div>
+                    </div>
+
+                    <div class="mb-2">
+                        <p class="text-[9px] uppercase font-bold text-slate-400">Saldo</p>
+                        <input type="text" value="${fmt(c.saldo)}" oninput="atualizarSaldo(this, ${c.id})" onfocus="this.select()" class="text-3xl text-slate-800 font-mono font-bold w-full" />
+                    </div>
+
+                    <div class="flex justify-between items-center pt-2 border-t border-slate-50">
+                        <span class="text-[10px] font-bold text-slate-400">Lucro Bruto:</span>
+                        <span class="text-sm font-mono font-bold ${corLucro}">${fmt(lucroBruto)}</span>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+            calcular();
+        }
+
+        function atualizarConta(id, campo, valor) {
+            const conta = db.find(x => x.id === id);
+            if (!conta) return;
+
+            if (campo === 'nome' || campo === 'dono' || campo === 'tipo') {
+                conta[campo] = valor.toUpperCase();
+            } else if (campo === 'invest' || campo === 'com') {
+                conta[campo] = parseFloat(valor) || 0;
+            }
+            salvar();
+            render();
+        }
+
+        function atualizarSaldo(el, id) {
+            let v = el.value.replace(/\D/g, '');
+            let n = parseFloat((v / 100).toFixed(2)) || 0;
+            const conta = db.find(x => x.id === id);
+            if (!conta) return;
+            conta.saldo = n;
+            el.value = fmt(n);
+            salvar();
+            render();
+        }
+
+        function excluirConta(id) {
+            if (confirm('Remover conta?')) {
+                db = db.filter(x => x.id !== id);
+                salvar();
+                render();
+            }
+        }
+
+        document.getElementById('btnNovoCard').onclick = () => {
+            const novo = {
+                id: Date.now(),
+                nome: 'NOVA CONTA',
+                saldo: 0,
+                invest: 0,
+                com: 100,
+                tipo: 'SEU',
+                dono: 'VOCÊ'
+            };
+            db.push(novo);
+            salvar();
+            render();
+        };
+
+        // Renderiza a página inicialmente
+        render();
+    </script>
 </body>
 </html>
