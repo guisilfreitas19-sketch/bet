@@ -2,73 +2,108 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Bet - 2026 v1.0</title>
+    <title>Bet Dashboard - 2026 Light</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #000; color: #e5e7eb; font-family: 'Inter', sans-serif; transition: background-color 0.5s; overflow-x: hidden; }
-        .body-privado { background-color: #0c0d10 !important; }
-        
-        /* Cards com cantos 3xl para visual de Monitor/TV */
-        .card-oled { background-color: #000; border: 1px solid #1a1a1a; border-radius: 2rem; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: relative; padding: 1.8rem; }
-        .card-oled:hover { border-color: #3b82f6; box-shadow: 0 10px 40px rgba(59, 130, 246, 0.15); transform: translateY(-4px); }
-        
-        /* Pulsação de Saque Disponível */
-        @keyframes pulse-gold {
-            0% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.2); }
-            70% { box-shadow: 0 0 20px 10px rgba(251, 191, 36, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0); }
+        body { 
+            background-color: #f8fafc; 
+            color: #1e293b; 
+            font-family: 'Inter', sans-serif; 
+            transition: all 0.5s; 
+            overflow-x: hidden; 
         }
-        .saque-ativo { animation: pulse-gold 2s infinite; border-color: #fbbf24 !important; background: rgba(251, 191, 36, 0.02); }
+        
+        /* Fundo quando a privacidade está ativa */
+        .body-privado { background-color: #f1f5f9 !important; }
+        
+        /* Cards Estilo Apple/SaaS Moderno */
+        .card-oled { 
+            background-color: #ffffff; 
+            border: 1px solid #e2e8f0; 
+            border-radius: 2rem; 
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+            position: relative; 
+            padding: 1.8rem; 
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+        }
+        .card-oled:hover { 
+            border-color: #3b82f6; 
+            box-shadow: 0 20px 40px rgba(59, 130, 246, 0.08); 
+            transform: translateY(-4px); 
+        }
+        
+        /* Pulsação de Saque Disponível (Dourado Suave) */
+        @keyframes pulse-gold {
+            0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.3); }
+            70% { box-shadow: 0 0 25px 10px rgba(245, 158, 11, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+        }
+        .saque-ativo { 
+            animation: pulse-gold 2s infinite; 
+            border-color: #fbbf24 !important; 
+            background: #fffdf2; 
+        }
 
-        /* Barras e Inputs */
-        .barra-progresso { height: 3px; background: #0a0a0a; border-radius: 4px; overflow: hidden; margin-top: 15px; }
+        /* Barras de Progresso Minimalistas */
+        .barra-progresso { height: 4px; background: #f1f5f9; border-radius: 10px; overflow: hidden; margin-top: 15px; }
         .progresso-fill { height: 100%; transition: width 1s cubic-bezier(0.4, 0, 0.2, 1); width: 0%; }
-        .barra-vazia { background-color: #222; }
-        .barra-ok { background: linear-gradient(90deg, #1e3a8a, #3b82f6); }
-        .barra-meta { background: linear-gradient(90deg, #b45309, #fbbf24); }
+        .barra-vazia { background-color: #cbd5e1; }
+        .barra-ok { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+        .barra-meta { background: linear-gradient(90deg, #d97706, #fbbf24); }
 
-        input { background: transparent; border-bottom: 2px solid #111; outline: none; width: 100%; transition: all 0.3s; font-family: 'JetBrains Mono', monospace; }
-        input:focus { border-color: #3b82f6; color: #fff; }
+        /* Inputs */
+        input { 
+            background: transparent; 
+            border-bottom: 2px solid #f1f5f9; 
+            outline: none; 
+            width: 100%; 
+            transition: all 0.3s; 
+            font-family: 'JetBrains Mono', monospace; 
+            color: #0f172a;
+        }
+        input:focus { border-color: #3b82f6; }
         
-        .valor-privado { filter: blur(14px) grayscale(100%); pointer-events: none; opacity: 0.4; }
-        .borda-privada { border-top-color: #1f2937 !important; }
+        /* Efeito de Privacidade */
+        .valor-privado { filter: blur(14px); opacity: 0.2; pointer-events: none; }
+        .borda-privada { border-top-color: #94a3b8 !important; }
         
-        /* Scrollbar Invisível para ficar limpo na TV */
+        /* Scrollbar Oculta */
         ::-webkit-scrollbar { width: 0px; background: transparent; }
     </style>
 </head>
 <body class="p-6 md:p-12">
 
     <div class="max-w-7xl mx-auto">
-        <div id="headerDinamico" class="bg-black border border-gray-900 rounded-[2.5rem] p-10 mb-12 border-t-4 transition-all shadow-2xl relative overflow-hidden">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-10 items-center relative z-10">
+        <div id="headerDinamico" class="bg-white border border-slate-200 rounded-[2.5rem] p-8 md:p-10 mb-12 border-t-[6px] transition-all shadow-xl shadow-slate-200/50 relative overflow-hidden">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-8 items-center relative z-10">
                 
-                <div class="lg:col-span-1 pr-4">
-                    <p class="text-[10px] font-black text-gray-600 uppercase tracking-[0.2em] mb-2">Investimento</p>
-                    <input type="text" id="campoBancaBase" class="text-2xl font-bold text-blue-500 tracking-tighter">
+                <div class="lg:col-span-1">
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Investimento</p>
+                    <input type="text" id="campoBancaBase" class="text-2xl font-bold text-blue-600 tracking-tighter">
                 </div>
 
                 <div class="lg:col-span-2 flex items-center gap-6">
                     <div>
-                        <p class="text-[10px] font-black text-gray-600 uppercase tracking-[0.2em] mb-2">Performance 2026</p>
+                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Performance 2026</p>
                         <p id="exibirLucro" class="text-5xl font-mono font-bold tracking-tighter transition-all">R$ 0,00</p>
                     </div>
-                    <div class="flex flex-col items-center border border-gray-800 px-4 py-2 rounded-2xl bg-zinc-950/50">
+                    <div class="flex flex-col items-center border border-slate-100 px-4 py-2 rounded-2xl bg-slate-50">
                         <span id="emojiSaude" class="text-3xl mb-1">⚖️</span>
-                        <span id="txtStatus" class="text-[9px] font-black uppercase tracking-tighter text-gray-600">Calculando...</span>
+                        <span id="txtStatus" class="text-[9px] font-black uppercase tracking-tighter text-slate-500">Calculando...</span>
                     </div>
                 </div>
 
-                <div id="containerSaque" class="lg:col-span-1 border border-gray-900 p-5 rounded-[1.5rem] transition-all opacity-20">
-                    <p class="text-[9px] font-black text-yellow-600 uppercase tracking-widest mb-1 italic">Disponível p/ Saque</p>
-                    <p id="exibirSaqueTotal" class="text-2xl font-mono font-bold text-yellow-500 tracking-tighter">R$ 0,00</p>
+                <div id="containerSaque" class="lg:col-span-1 border border-slate-100 p-5 rounded-[1.5rem] transition-all opacity-30">
+                    <p class="text-[9px] font-black text-amber-600 uppercase tracking-widest mb-1 italic">Disponível p/ Saque</p>
+                    <p id="exibirSaqueTotal" class="text-2xl font-mono font-bold text-amber-500 tracking-tighter">R$ 0,00</p>
                 </div>
 
                 <div class="lg:col-span-2 flex flex-col gap-3">
-                    <button id="btnNovoCard" class="bg-blue-700 hover:bg-blue-600 text-white py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] active:scale-95 transition-all shadow-lg shadow-blue-900/20">＋ Adicionar Conta</button>
+                    <button id="btnNovoCard" class="bg-slate-900 hover:bg-blue-600 text-white py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] active:scale-95 transition-all shadow-lg shadow-slate-300">＋ Adicionar Conta</button>
                     <div class="flex gap-3">
-                        <button id="btnPrivacidade" class="flex-1 bg-zinc-900 border border-zinc-800 text-gray-400 py-3 rounded-2xl text-[10px] font-bold uppercase hover:bg-zinc-800">👁️ Privacidade</button>
-                        <button id="btnReset" class="flex-1 bg-red-950/30 border border-red-900/50 text-red-500 py-3 rounded-2xl text-[10px] font-bold uppercase hover:bg-red-900/40 transition-all">Fechar Mês</button>
+                        <button id="btnPrivacidade" class="flex-1 bg-white border border-slate-200 text-slate-500 py-3 rounded-2xl text-[10px] font-bold uppercase hover:bg-slate-50 transition-all">👁️ Privacidade</button>
+                        <button id="btnReset" class="flex-1 bg-red-50 border border-red-100 text-red-500 py-3 rounded-2xl text-[10px] font-bold uppercase hover:bg-red-100 transition-all">Fechar Mês</button>
                     </div>
                 </div>
             </div>
@@ -76,29 +111,28 @@
 
         <div id="listaContas" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8"></div>
 
-        <div class="mt-20 text-center border-t border-gray-900 pt-8 opacity-30 hover:opacity-100 transition-all">
-            <div class="inline-block bg-zinc-950 px-6 py-2 rounded-full border border-gray-900">
-                <p class="text-[10px] font-black text-gray-700 uppercase tracking-[0.3em] mb-1">Último Saque Realizado</p>
-                <p id="exibirMemoria" class="text-sm font-mono text-gray-500 tracking-widest">Aguardando fechamento...</p>
+        <div class="mt-20 text-center border-t border-slate-200 pt-8 opacity-50 hover:opacity-100 transition-all">
+            <div class="inline-block bg-white px-6 py-2 rounded-full border border-slate-200 shadow-sm">
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-1">Último Saque Realizado</p>
+                <p id="exibirMemoria" class="text-sm font-mono text-slate-600 tracking-widest">Aguardando fechamento...</p>
             </div>
         </div>
     </div>
 
     <script>
-        // Memória v105 - Estabilidade Total
         let db = {
-            banca: parseFloat(localStorage.getItem('b_v105')) || 5000,
-            contas: JSON.parse(localStorage.getItem('c_v105')) || [{ id: Date.now(), nome: 'BETANO - EVERTON', saldo: 0 }],
-            memoria: localStorage.getItem('m_v105') || "Sem registros",
+            banca: parseFloat(localStorage.getItem('b_v105_light')) || 5000,
+            contas: JSON.parse(localStorage.getItem('c_v105_light')) || [{ id: Date.now(), nome: 'BETANO - PRINCIPAL', saldo: 0 }],
+            memoria: localStorage.getItem('m_v105_light') || "Sem registros",
             privacidade: false
         };
 
         const fmt = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
         function salvar() {
-            localStorage.setItem('b_v105', db.banca);
-            localStorage.setItem('c_v105', JSON.stringify(db.contas));
-            localStorage.setItem('m_v105', db.memoria);
+            localStorage.setItem('b_v105_light', db.banca);
+            localStorage.setItem('c_v105_light', JSON.stringify(db.contas));
+            localStorage.setItem('m_v105_light', db.memoria);
             calcular();
         }
 
@@ -125,13 +159,13 @@
                 elHeader.classList.remove('borda-privada');
                 
                 let cor, emoji, status;
-                if (pct > 25) { cor = "text-green-400"; emoji = "🔥"; status = "Elite"; }
-                else if (pct > 0) { cor = "text-green-500"; emoji = "📈"; status = "Em Lucro"; }
-                else if (pct >= -10) { cor = "text-gray-500"; emoji = "⚖️"; status = "Estável"; }
-                else { cor = "text-red-600"; emoji = "⚠️"; status = "Recuperar"; }
+                if (pct > 25) { cor = "text-emerald-500"; emoji = "🔥"; status = "Elite"; }
+                else if (pct > 0) { cor = "text-blue-500"; emoji = "📈"; status = "Em Lucro"; }
+                else if (pct >= -10) { cor = "text-slate-400"; emoji = "⚖️"; status = "Estável"; }
+                else { cor = "text-red-500"; emoji = "⚠️"; status = "Recuperar"; }
                 
                 elLucro.className = `text-5xl font-mono font-bold tracking-tighter ${cor}`;
-                elHeader.style.borderTopColor = lucro >= 0 ? "#16a34a" : "#991b1b";
+                elHeader.style.borderTopColor = lucro >= 0 ? "#10b981" : "#ef4444";
                 document.getElementById('emojiSaude').innerText = emoji;
                 document.getElementById('txtStatus').innerText = status;
                 document.getElementById('txtStatus').className = `text-[9px] font-black uppercase tracking-tighter ${cor}`;
@@ -143,7 +177,7 @@
                 } else {
                     elSaque.innerText = "R$ 0,00";
                     boxSaque.classList.remove('saque-ativo');
-                    boxSaque.style.opacity = "0.2";
+                    boxSaque.style.opacity = "0.3";
                 }
             }
             atualizarBarras();
@@ -167,9 +201,9 @@
                 const div = document.createElement('div');
                 div.className = 'card-oled';
                 div.innerHTML = `
-                    <button class="absolute top-6 right-6 text-gray-800 hover:text-red-600 transition-colors" onclick="apiExcluir(${c.id})">✕</button>
-                    <p class="text-[10px] text-blue-800 font-black uppercase tracking-[0.2em] mb-5 italic cursor-pointer hover:text-blue-500 transition-colors" onclick="apiRenomear(${c.id})">${c.nome} ✏️</p>
-                    <input type="text" value="${fmt(c.saldo)}" oninput="apiMascara(this, ${c.id})" onfocus="this.select()" class="${db.privacidade ? 'valor-privado' : ''} text-3xl text-white pb-3 font-mono font-bold tracking-tighter">
+                    <button class="absolute top-6 right-6 text-slate-300 hover:text-red-500 transition-colors" onclick="apiExcluir(${c.id})">✕</button>
+                    <p class="text-[10px] text-blue-500 font-black uppercase tracking-[0.2em] mb-5 italic cursor-pointer hover:text-blue-700 transition-colors" onclick="apiRenomear(${c.id})">${c.nome} ✏️</p>
+                    <input type="text" value="${fmt(c.saldo)}" oninput="apiMascara(this, ${c.id})" onfocus="this.select()" class="${db.privacidade ? 'valor-privado' : ''} text-3xl text-slate-800 pb-3 font-mono font-bold tracking-tighter">
                     <div class="barra-progresso"><div class="progresso-fill" id="fill-${c.id}"></div></div>
                 `;
                 container.appendChild(div);
@@ -177,7 +211,6 @@
             calcular();
         }
 
-        // APIs de Máscara de Banco (Dinâmica)
         window.apiMascara = (el, id) => {
             let v = el.value.replace(/\D/g, '');
             let n = parseFloat((v / 100).toFixed(2)) || 0;
@@ -199,7 +232,6 @@
             if(confirm("Deseja remover esta banca?")) { db.contas = db.contas.filter(x => x.id !== id); salvar(); render(); }
         };
 
-        // Botões
         document.getElementById('btnNovoCard').addEventListener('click', () => {
             const nova = { id: Date.now(), nome: 'NOVA BANCA', saldo: 0 };
             db.contas.push(nova);
@@ -220,7 +252,7 @@
 
         document.getElementById('campoBancaBase').oninput = function() { apiMascara(this, 'BANCA'); };
 
-        // Start 
+        // Inicialização
         document.getElementById('campoBancaBase').value = fmt(db.banca);
         document.getElementById('exibirMemoria').innerText = db.memoria;
         render();
