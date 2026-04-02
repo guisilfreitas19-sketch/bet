@@ -2,17 +2,18 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<title>Bet Dashboard v1.5</title>
+<title>Bet Dashboard Profissional v2.0</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
 
 <style>
 body { background:#f8fafc; font-family:Inter; }
-.card { background:#fff; border:1px solid #e2e8f0; border-radius:24px; padding:20px; }
-.card:hover { border-color:#3b82f6; transform:translateY(-3px); transition:.2s; }
+.card { background:#fff; border:1px solid #e2e8f0; border-radius:24px; padding:20px; transition:.2s; }
+.card:hover { border-color:#3b82f6; transform:translateY(-3px); }
 input { border-bottom:1px solid #e2e8f0; font-family:'JetBrains Mono'; }
 input:focus { outline:none; border-color:#3b82f6; }
+.select-type { border:1px solid #e2e8f0; border-radius:12px; padding:2px 8px; font-size:12px; }
 </style>
 </head>
 
@@ -32,25 +33,24 @@ input:focus { outline:none; border-color:#3b82f6; }
 </div>
 
 <script>
-// proteção
 function safe(n){ return isNaN(n) ? 0 : Number(n); }
 
-// carregar
+// Estrutura de dados
 let data = JSON.parse(localStorage.getItem('db')) || [
- {id:1,nome:'EVERTON',saldo:3400,invest:4000,com:90},
- {id:2,nome:'GUILHERME',saldo:1050,invest:1000,com:100},
- {id:3,nome:'HINGRID',saldo:1000,invest:0,com:50}
+ {id:1,nome:'EVERTON',saldo:3400,invest:4000,com:90,tipo:'SEU'},
+ {id:2,nome:'GUILHERME',saldo:1050,invest:1000,com:100,tipo:'SOCIEDADE'},
+ {id:3,nome:'HINGRID',saldo:1000,invest:0,com:50,tipo:'GESTAO'}
 ];
 
 const fmt = v => safe(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 
-// salvar
+// Salvar no localStorage
 function salvar(){
  localStorage.setItem('db',JSON.stringify(data));
  calc();
 }
 
-// cálculo FINAL correto
+// Cálculo de lucro automático
 function calc(){
  let total = 0;
 
@@ -62,20 +62,12 @@ function calc(){
   let lucro = saldo - invest;
   let meu = 0;
 
-  // 🔵 SE O DINHEIRO É SEU
-  if(invest > 0){
-    meu = lucro > 0
-      ? lucro * (com/100)
-      : lucro;
-  }
-
-  // 🟡 DINHEIRO DE TERCEIROS (HINGRID)
-  else {
-    if(lucro > 0){
-      meu = lucro * (com/100);
-    } else {
-      meu = 0;
-    }
+  if(c.tipo === 'SEU'){           // Seu dinheiro
+    meu = lucro > 0 ? lucro*(com/100) : lucro;
+  } else if(c.tipo === 'SOCIEDADE'){ // Sociedade
+    meu = lucro > 0 ? lucro*(com/100) : 0;
+  } else if(c.tipo === 'GESTAO'){ // Gestão de terceiros
+    meu = lucro > 0 ? lucro*(com/100) : 0;
   }
 
   total += meu;
@@ -84,7 +76,7 @@ function calc(){
  document.getElementById('total').innerText = fmt(total);
 }
 
-// render
+// Renderização das contas
 function render(){
  let el = document.getElementById('contas');
  el.innerHTML = '';
@@ -93,7 +85,6 @@ function render(){
   let saldo = safe(c.saldo);
   let invest = safe(c.invest);
   let lucro = saldo - invest;
-
   let cor = lucro>=0?'text-green-500':'text-red-500';
 
   el.innerHTML += `
@@ -103,34 +94,34 @@ function render(){
     <input value="${c.nome}" oninput="upd(${c.id},'nome',this.value)" 
         class="text-blue-500 font-bold w-full mb-3">
 
-    <div class="text-xs text-gray-400 mb-2">
-      Invest:
-      <input 
-        value="${fmt(invest)}" 
-        oninput="maskInvest(this,${c.id})" 
-        onfocus="this.select()" 
-        class="w-24">
-
-      Comissão:
-      <input 
-        type="number" 
-        value="${c.com}" 
-        oninput="upd(${c.id},'com',this.value)" 
-        class="w-12">%
+    <div class="flex justify-between items-center text-xs text-gray-400 mb-2">
+      <div>
+        Invest:
+        <input value="${fmt(invest)}" oninput="maskInvest(this,${c.id})" onfocus="this.select()" class="w-24">
+      </div>
+      <div>
+        Comissão:
+        <input type="number" value="${c.com}" oninput="upd(${c.id},'com',this.value)" class="w-12">%
+      </div>
+      <div>
+        Tipo:
+        <select class="select-type" onchange="upd(${c.id},'tipo',this.value)">
+          <option ${c.tipo==='SEU'?'selected':''}>SEU</option>
+          <option ${c.tipo==='SOCIEDADE'?'selected':''}>SOCIEDADE</option>
+          <option ${c.tipo==='GESTAO'?'selected':''}>GESTAO</option>
+        </select>
+      </div>
     </div>
 
     <div class="mb-2">
       Saldo:
-      <input 
-        value="${fmt(saldo)}" 
-        oninput="maskSaldo(this,${c.id})" 
-        onfocus="this.select()" 
-        class="text-2xl w-full">
+      <input value="${fmt(saldo)}" oninput="maskSaldo(this,${c.id})" onfocus="this.select()" class="text-2xl w-full">
     </div>
 
     <div class="${cor} font-bold">${fmt(lucro)}</div>
 
-    ${invest==0 ? '<div class="text-xs text-amber-500 mt-2">Conta de terceiro (você só ganha no lucro)</div>' : ''}
+    ${c.tipo==='SOCIEDADE'?'<div class="text-xs text-blue-500 mt-2">Sociedade (você ganha % do lucro)</div>':''}
+    ${c.tipo==='GESTAO'?'<div class="text-xs text-amber-500 mt-2">Gestão de terceiros (você ganha % do lucro)</div>':''}
   </div>
   `;
  });
@@ -138,16 +129,16 @@ function render(){
  calc();
 }
 
-// update
+// Atualização de campos
 function upd(id,campo,val){
  let c = data.find(x=>x.id==id);
  if(!c) return;
 
- c[campo] = campo=='nome' ? val.toUpperCase() : safe(parseFloat(val));
+ c[campo] = campo=='nome' ? val.toUpperCase() : val;
  salvar();
 }
 
-// máscara saldo
+// Máscaras
 function maskSaldo(el,id){
  let v = el.value.replace(/\D/g,'');
  let n = safe(v/100);
@@ -159,7 +150,6 @@ function maskSaldo(el,id){
  salvar();
 }
 
-// máscara investimento
 function maskInvest(el,id){
  let v = el.value.replace(/\D/g,'');
  let n = safe(v/100);
@@ -171,7 +161,7 @@ function maskInvest(el,id){
  salvar();
 }
 
-// deletar
+// Deletar
 function del(id){
  if(confirm('Remover conta?')){
   data = data.filter(x=>x.id!=id);
@@ -180,15 +170,9 @@ function del(id){
  }
 }
 
-// nova conta
+// Nova conta
 function novo(){
- data.push({
-  id:Date.now(),
-  nome:'NOVA CONTA',
-  saldo:0,
-  invest:0,
-  com:100
- });
+ data.push({id:Date.now(),nome:'NOVA CONTA',saldo:0,invest:0,com:100,tipo:'SEU'});
  salvar();
  render();
 }
