@@ -2,14 +2,14 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<title>Bet Dashboard Profissional v4.2</title>
+<title>Bet Dashboard Profissional v4.3</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
 
 <style>
 body { background:#f8fafc; font-family:Inter; }
-.card { background:#fff; border-radius:1.5rem; padding:1.5rem; transition:.3s; position:relative; display:flex; flex-direction:column; justify-content:space-between; height:100%; border:1px solid #e2e8f0; }
+.card { background:#fff; border-radius:1.5rem; padding:1.5rem; transition:.3s; position:relative; display:flex; flex-direction:column; justify-content:space-between; border:1px solid #e2e8f0; }
 .card:hover { transform:translateY(-4px); border-color:#3b82f6; box-shadow:0 10px 30px rgba(59,130,246,0.1); }
 .remove-btn { position:absolute; top:12px; right:12px; color:#f87171; cursor:pointer; font-weight:bold; }
 input, select { font-family:'JetBrains Mono'; padding:2px 6px; border:1px solid #e2e8f0; border-radius:8px; width:100%; }
@@ -36,7 +36,6 @@ input:focus, select:focus { outline:none; border-color:#3b82f6; }
 <p class="text-xs text-gray-400 mb-2">SEU LUCRO LÍQUIDO</p>
 <h1 id="total" class="text-5xl text-emerald-500 font-mono mb-4">R$ 0,00</h1>
 
-<!-- Legenda -->
 <div class="legend">
   <span><span class="block block-seu"></span> SEU: dinheiro que você colocou, você recebe todo lucro proporcional à comissão</span>
   <span><span class="block block-sociedade"></span> SOCIEDADE: dinheiro de terceiros que você administra, recebe apenas % do lucro</span>
@@ -51,9 +50,9 @@ input:focus, select:focus { outline:none; border-color:#3b82f6; }
 </div>
 
 <script>
-function safe(n){ return isNaN(n)?0:Number(n); }
+const safe = n => isNaN(n)?0:Number(n);
 
-// Usa localStorage, ou cria com contas iniciais
+// Inicializa dados
 let data = JSON.parse(localStorage.getItem('db'));
 if(!data) {
   data = [
@@ -66,99 +65,88 @@ if(!data) {
 
 const fmt = v => safe(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 
-function salvar(){ 
-  localStorage.setItem('db',JSON.stringify(data)); 
-  calc(); 
+function salvar(){
+  localStorage.setItem('db',JSON.stringify(data));
+  calc();
 }
 
 function calc(){
- let total = 0;
- data.forEach(c=>{
-  let saldo = safe(c.saldo), invest = safe(c.invest), com = safe(c.com);
-  let lucro = saldo - invest, meu = 0;
-  if(c.dono.toUpperCase()==='VOCE'){ meu = lucro>0?lucro*(com/100):lucro; }
-  else { meu = lucro>0?lucro*(com/100):0; }
-  total += meu;
- });
- document.getElementById('total').innerText = fmt(total);
+  let total = 0;
+  data.forEach(c=>{
+    let saldo = safe(c.saldo), invest = safe(c.invest), com = safe(c.com);
+    let lucro = saldo - invest;
+    let meu = 0;
+    if(c.dono.toUpperCase()==='VOCE') meu = lucro>0?lucro*(com/100):lucro;
+    else meu = lucro>0?lucro*(com/100):0;
+    total += meu;
+  });
+  document.getElementById('total').innerText = fmt(total);
 }
 
 function render(){
- let el = document.getElementById('contas'); el.innerHTML='';
- data.forEach(c=>{
-  let saldo = safe(c.saldo), invest = safe(c.invest), lucro = saldo - invest;
-  let cor = lucro>=0?'text-green-500':'text-red-500';
-  let tipoClass = c.tipo==='SEU'?'tipo-seu':(c.tipo==='SOCIEDADE'?'tipo-sociedade':'tipo-gestao');
+  const el = document.getElementById('contas'); 
+  el.innerHTML='';
+  data.forEach(c=>{
+    const saldo = safe(c.saldo), invest = safe(c.invest), lucro = saldo-invest;
+    const cor = lucro>=0?'text-green-500':'text-red-500';
+    const tipoClass = c.tipo==='SEU'?'tipo-seu':(c.tipo==='SOCIEDADE'?'tipo-sociedade':'tipo-gestao');
 
-  el.innerHTML += `
-  <div class="card ${tipoClass}">
-    <span class="remove-btn" onclick="del(${c.id})">✕</span>
+    const card = document.createElement('div');
+    card.className = `card ${tipoClass}`;
+    card.innerHTML = `
+      <span class="remove-btn">✕</span>
 
-    <div class="card-header">
-      <input value="${c.nome}" oninput="upd(${c.id},'nome',this.value)" class="text-blue-500 font-bold w-full">
-    </div>
-
-    <div class="card-body">
-      <div>
-        Invest: <input value="${fmt(invest)}" oninput="maskInvest(this,${c.id})" onfocus="this.select()">
+      <div class="card-header">
+        <input value="${c.nome}" class="text-blue-500 font-bold w-full">
       </div>
-      <div>
-        Comissão: <input type="number" value="${c.com}" oninput="upd(${c.id},'com',this.value)" class="w-12">%
+
+      <div class="card-body">
+        <div>Invest: <input value="${fmt(invest)}"></div>
+        <div>Comissão: <input type="number" value="${c.com}" class="w-12">%</div>
       </div>
-    </div>
 
-    <div class="card-body">
-      <div>
-        Tipo: 
-        <select class="select-type" onchange="upd(${c.id},'tipo',this.value)">
-          <option ${c.tipo==='SEU'?'selected':''}>SEU</option>
-          <option ${c.tipo==='SOCIEDADE'?'selected':''}>SOCIEDADE</option>
-          <option ${c.tipo==='GESTAO'?'selected':''}>GESTAO</option>
-        </select>
+      <div class="card-body">
+        <div>Tipo: 
+          <select class="select-type">
+            <option ${c.tipo==='SEU'?'selected':''}>SEU</option>
+            <option ${c.tipo==='SOCIEDADE'?'selected':''}>SOCIEDADE</option>
+            <option ${c.tipo==='GESTAO'?'selected':''}>GESTAO</option>
+          </select>
+        </div>
+        <div>Dono: <input value="${c.dono}"></div>
       </div>
-      <div>
-        Dono do dinheiro: <input value="${c.dono}" oninput="upd(${c.id},'dono',this.value)">
-      </div>
-    </div>
 
-    <div class="card-body">
-      Saldo: <input value="${fmt(saldo)}" oninput="maskSaldo(this,${c.id})" onfocus="this.select()" class="text-2xl w-full">
-    </div>
+      <div class="card-body">Saldo: <input value="${fmt(saldo)}" class="text-2xl w-full"></div>
+      <div class="card-footer ${cor} text-lucro">${fmt(lucro)}</div>
+      ${c.dono.toUpperCase()!=='VOCE'?'<div class="text-xs text-amber-500 mt-2">Dinheiro de terceiros (você só ganha % do lucro)</div>':''}
+    `;
 
-    <div class="card-footer ${cor} text-lucro">${fmt(lucro)}</div>
-    ${c.dono.toUpperCase()!=='VOCE'?'<div class="text-xs text-amber-500 mt-2">Dinheiro de terceiros (você só ganha % do lucro)</div>':''}
-  </div>
-  `;
- });
- calc();
+    // Eventos
+    card.querySelector('.remove-btn').onclick = ()=>{ del(c.id); };
+    const inputs = card.querySelectorAll('input');
+    inputs[0].oninput = e=>{ c.nome=e.target.value.toUpperCase(); salvar(); };
+    inputs[1].oninput = e=>{ c.invest = safe(e.target.value.replace(/\D/g,''))/100; salvar(); render(); };
+    inputs[2].oninput = e=>{ c.com = safe(e.target.value); salvar(); render(); };
+    inputs[3].oninput = e=>{ c.dono = e.target.value.toUpperCase(); salvar(); };
+    inputs[4].oninput = e=>{ c.saldo = safe(e.target.value.replace(/\D/g,''))/100; salvar(); render(); };
+
+    card.querySelector('select').onchange = e=>{ c.tipo=e.target.value; salvar(); render(); };
+
+    el.appendChild(card);
+  });
+  calc();
 }
 
-function upd(id,campo,val){
- let c=data.find(x=>x.id==id); if(!c) return;
- c[campo] = campo==='nome'||campo==='dono'?val.toUpperCase():val; salvar(); render();
+function del(id){
+  if(confirm('Remover conta?')){
+    data = data.filter(x=>x.id!=id);
+    salvar(); render();
+  }
 }
 
-function maskSaldo(el,id){
- let v=el.value.replace(/\D/g,''); let n=safe(v/100);
- let c=data.find(x=>x.id==id); if(c)c.saldo=n;
- el.value=fmt(n); salvar(); render();
-}
-
-function maskInvest(el,id){
- let v=el.value.replace(/\D/g,''); let n=safe(v/100);
- let c=data.find(x=>x.id==id); if(c)c.invest=n;
- el.value=fmt(n); salvar(); render();
-}
-
-function del(id){ 
- if(confirm('Remover conta?')){ 
-   data=data.filter(x=>x.id!=id); salvar(); render(); 
- } 
-}
-
-document.getElementById('btnNovo').onclick = function(){
- data.push({id:Date.now(),nome:'NOVA CONTA',saldo:0,invest:0,com:100,tipo:'SEU',dono:'VOCE'});
- salvar(); render();
+document.getElementById('btnNovo').onclick = ()=>{
+  data.push({id:Date.now(),nome:'NOVA CONTA',saldo:0,invest:0,com:100,tipo:'SEU',dono:'VOCE'});
+  salvar(); render();
 }
 
 render();
