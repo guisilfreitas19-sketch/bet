@@ -1,245 +1,262 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8" />
-    <title>Bet Dashboard - Gestão de Capital v1.3</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet" />
-    <style>
-        body {
-            background-color: #f8fafc;
-            color: #1e293b;
-            font-family: 'Inter', sans-serif;
-            transition: all 0.5s;
-            overflow-x: hidden;
-        }
-        .card-oled {
-            background-color: #ffffff;
-            border: 1px solid #e2e8f0;
-            border-radius: 2rem;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            padding: 1.5rem;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
-        }
-        .card-oled:hover {
-            border-color: #3b82f6;
-            box-shadow: 0 20px 40px rgba(59, 130, 246, 0.08);
-            transform: translateY(-4px);
-        }
-        @keyframes pulse-gold {
-            0% {
-                box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.3);
-            }
-            70% {
-                box-shadow: 0 0 25px 10px rgba(245, 158, 11, 0);
-            }
-            100% {
-                box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
-            }
-        }
-        .saque-ativo {
-            animation: pulse-gold 2s infinite;
-            border-color: #fbbf24 !important;
-            background: #fffdf2;
-        }
-        input {
-            background: transparent;
-            border-bottom: 1px solid #f1f5f9;
-            outline: none;
-            transition: all 0.3s;
-            font-family: 'JetBrains Mono', monospace;
-        }
-        input:focus {
-            border-color: #3b82f6;
-        }
-        .valor-privado {
-            filter: blur(14px);
-            opacity: 0.2;
-            pointer-events: none;
-        }
-        ::-webkit-scrollbar {
-            width: 0px;
-            background: transparent;
-        }
-        .legend-color {
-            display: inline-block;
-            width: 16px;
-            height: 16px;
-            margin-right: 0.5rem;
-            vertical-align: middle;
-            border-radius: 4px;
-        }
-        .legend-seu {
-            background-color: #059669; /* emerald-600 */
-        }
-        .legend-sociedade {
-            background-color: #3b82f6; /* blue-500 */
-        }
-        .legend-gestao {
-            background-color: #f59e0b; /* amber-500 */
-        }
-    </style>
+<meta charset="UTF-8" />
+<title>Bet Dashboard - Gestão de Capital v1.3</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet" />
+<style>
+    body { background-color: #f8fafc; color: #1e293b; font-family: 'Inter', sans-serif; transition: all 0.5s; overflow-x: hidden; }
+    .card-oled { 
+        background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 2rem; 
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: relative; padding: 1.5rem; 
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+    }
+    .card-oled:hover { border-color: #3b82f6; box-shadow: 0 20px 40px rgba(59, 130, 246, 0.08); transform: translateY(-4px); }
+
+    @keyframes pulse-gold {
+        0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.3); }
+        70% { box-shadow: 0 0 25px 10px rgba(245, 158, 11, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+    }
+    .saque-ativo { animation: pulse-gold 2s infinite; border-color: #fbbf24 !important; background: #fffdf2; }
+
+    input { background: transparent; border-bottom: 1px solid #f1f5f9; outline: none; transition: all 0.3s; font-family: 'JetBrains Mono', monospace; }
+    input:focus { border-color: #3b82f6; }
+    
+    .valor-privado { filter: blur(14px); opacity: 0.2; pointer-events: none; }
+    ::-webkit-scrollbar { width: 0px; background: transparent; }
+
+    .legenda {
+        font-size: 0.9rem;
+        margin-bottom: 1rem;
+        display: flex;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+        max-width: 700px;
+    }
+    .legenda span {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .legenda .cor-seu {
+        width: 20px; height: 20px; background-color: #059669; border-radius: 4px;
+    }
+    .legenda .cor-sociedade {
+        width: 20px; height: 20px; background-color: #2563eb; border-radius: 4px;
+    }
+    .legenda .cor-gestao {
+        width: 20px; height: 20px; background-color: #f59e0b; border-radius: 4px;
+    }
+</style>
 </head>
 <body class="p-6 md:p-12">
-    <div class="max-w-7xl mx-auto">
 
-        <div id="headerDinamico" class="bg-white border border-slate-200 rounded-[2.5rem] p-8 md:p-10 mb-8 border-t-[6px] transition-all shadow-xl shadow-slate-200/50">
-            <div>
-                <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Seu Lucro Líquido</p>
-                <p id="exibirLucro" class="text-5xl font-mono font-bold tracking-tighter transition-all text-emerald-500">R$ 0,00</p>
-            </div>
-            <div class="mt-6 space-y-2 text-sm max-w-4xl">
-                <p><span class="legend-color legend-seu"></span><strong>SEU:</strong> dinheiro que você colocou, você recebe todo lucro proporcional à comissão.</p>
-                <p><span class="legend-color legend-sociedade"></span><strong>SOCIEDADE:</strong> dinheiro de terceiros que você administra, recebe apenas % do lucro.</p>
-                <p><span class="legend-color legend-gestao"></span><strong>GESTÃO:</strong> dinheiro de terceiros que você gere, você ganha % do lucro conforme acordado.</p>
-            </div>
+<div class="max-w-7xl mx-auto">
+
+    <div id="headerDinamico" class="bg-white border border-slate-200 rounded-[2.5rem] p-8 md:p-10 mb-6 border-t-[6px] transition-all shadow-xl shadow-slate-200/50">
+        <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Seu Lucro Líquido</p>
+        <p id="exibirLucro" class="text-5xl font-mono font-bold tracking-tighter transition-all text-emerald-500">R$ 0,00</p>
+
+        <div class="legenda mt-4">
+            <span><div class="cor-seu"></div>SEU: dinheiro que você colocou, você recebe todo lucro proporcional à comissão</span>
+            <span><div class="cor-sociedade"></div>SOCIEDADE: dinheiro de terceiros que você administra, recebe apenas % do lucro</span>
+            <span><div class="cor-gestao"></div>GESTÃO: dinheiro de terceiros que você gere, você ganha % do lucro conforme acordado</span>
         </div>
 
-        <button id="btnNovoCard" class="bg-black text-white px-6 py-3 rounded-2xl text-[13px] font-black uppercase tracking-widest hover:bg-blue-700 mb-8">＋ Nova Conta</button>
-
-        <div id="listaContas" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8"></div>
+        <button id="btnNovoCard" class="mt-4 bg-black hover:bg-gray-800 text-white py-3 px-6 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] transition-all inline-block">＋ Nova Conta</button>
     </div>
 
-    <script>
-        const fmt = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    <div id="listaContas" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8"></div>
+</div>
 
-        // Inicia banco com dados do localStorage ou valores padrão
-        let db = JSON.parse(localStorage.getItem('db'));
-        if (!Array.isArray(db) || db.length === 0) {
-            db = [
-                { id: 1, nome: 'EVERTON', saldo: 3400, invest: 4000, com: 90, tipo: 'SEU', dono: 'VOCÊ' },
-                { id: 2, nome: 'GUILHERME', saldo: 1050, invest: 1000, com: 100, tipo: 'SOCIEDADE', dono: 'VOCÊ' },
-                { id: 3, nome: 'HINGRID', saldo: 1000, invest: 0, com: 50, tipo: 'GESTÃO', dono: 'HINGRID' }
-            ];
-            localStorage.setItem('db', JSON.stringify(db));
+<script>
+    // Dados e persistência no localStorage
+    let db = {
+        contas: JSON.parse(localStorage.getItem('c_v105')) || [
+            { id: 1, nome: 'BETANO EVERTON', saldo: 3400, investimento: 4000, comissao: 90, dono: 'seu' },
+            { id: 2, nome: 'ESTRELA BET - GUILHERME', saldo: 1050, investimento: 1000, comissao: 100, dono: 'sociedade' },
+            { id: 3, nome: 'BETANO HINGRID', saldo: 1000, investimento: 2000, comissao: 50, dono: 'gestao' }
+        ],
+        privacidade: false
+    };
+
+    // Formatação de moeda BRL
+    const fmt = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+    function salvar() {
+        localStorage.setItem('c_v105', JSON.stringify(db.contas));
+        calcular();
+    }
+
+    // Cálculo do lucro líquido total
+    function calcular() {
+        let seuTotalLiquido = 0;
+
+        db.contas.forEach(c => {
+            const lucroBruto = c.saldo - c.investimento;
+            let lucroParaMim = 0;
+
+            if (c.dono === 'seu') {
+                // Você colocou o dinheiro, pega investimento + % do lucro
+                lucroParaMim = lucroBruto * (c.comissao / 100);
+                seuTotalLiquido += c.investimento + lucroParaMim;
+            } else if (c.dono === 'sociedade') {
+                // Dinheiro de terceiros, você só ganha % do lucro, investimento não conta para você
+                lucroParaMim = lucroBruto * (c.comissao / 100);
+                seuTotalLiquido += lucroParaMim;
+            } else if (c.dono === 'gestao') {
+                // Dinheiro de terceiros, você não investiu, ganha só comissão do lucro (comissao é % da sua comissão)
+                lucroParaMim = lucroBruto * (c.comissao / 100);
+                seuTotalLiquido += lucroParaMim;
+            }
+        });
+
+        const elLucro = document.getElementById('exibirLucro');
+        elLucro.innerText = fmt(seuTotalLiquido);
+        if (db.privacidade) {
+            elLucro.classList.add('valor-privado');
+        } else {
+            elLucro.classList.remove('valor-privado');
         }
+    }
 
-        function salvar() {
-            localStorage.setItem('db', JSON.stringify(db));
-            calcular();
-        }
+    // Debounce para evitar múltiplos renderizações
+    let debounceTimer = null;
+    function debounceRender() {
+        if (debounceTimer) clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+            salvar();
+            render();
+        }, 300);
+    }
 
-        function calcular() {
-            let lucroLiquido = 0;
+    // Renderiza todas as contas
+    function render() {
+        const container = document.getElementById('listaContas');
+        container.innerHTML = '';
 
-            db.forEach(c => {
-                const lucroBruto = c.saldo - c.invest;
-                let meuLucro = 0;
+        db.contas.forEach(c => {
+            const lucro = c.saldo - c.investimento;
+            const corLucro = lucro >= 0 ? 'text-emerald-500' : 'text-red-500';
 
-                if (c.tipo === 'SEU') {
-                    // Você recebe seu investimento + sua comissão sobre o lucro
-                    meuLucro = c.invest + (lucroBruto > 0 ? lucroBruto * (c.com / 100) : lucroBruto);
-                } else if (c.tipo === 'SOCIEDADE') {
-                    // Você não investiu, só recebe comissão sobre lucro positivo
-                    meuLucro = lucroBruto > 0 ? lucroBruto * (c.com / 100) : lucroBruto;
-                } else if (c.tipo === 'GESTÃO') {
-                    // Você só ganha comissão sobre lucro positivo, não o investimento
-                    meuLucro = lucroBruto > 0 ? lucroBruto * (c.com / 100) : lucroBruto;
-                }
-                lucroLiquido += meuLucro;
-            });
+            // Cor e texto do dono
+            let donoTexto = '';
+            let donoCor = '';
+            if (c.dono === 'seu') {
+                donoTexto = 'SEU';
+                donoCor = 'text-green-600 font-bold';
+            } else if (c.dono === 'sociedade') {
+                donoTexto = 'SOCIEDADE';
+                donoCor = 'text-blue-600 font-bold';
+            } else if (c.dono === 'gestao') {
+                donoTexto = 'GESTÃO';
+                donoCor = 'text-yellow-600 font-bold';
+            }
 
-            const elLucro = document.getElementById('exibirLucro');
-            elLucro.innerText = fmt(lucroLiquido);
-
-            // Opção de ocultar valores privada - remova se não quiser
-            // (Aqui não implementei botão privacidade para simplificar)
-        }
-
-        function render() {
-            const container = document.getElementById('listaContas');
-            container.innerHTML = '';
-            db.forEach(c => {
-                const lucroBruto = c.saldo - c.invest;
-                const corLucro = lucroBruto >= 0 ? 'text-emerald-500' : 'text-red-500';
-
-                const div = document.createElement('div');
-                div.className = 'card-oled';
-                div.innerHTML = `
-                    <button class="absolute top-4 right-4 text-slate-300 hover:text-red-500" onclick="excluirConta(${c.id})">✕</button>
-                    <div class="mb-4">
-                        <input type="text" value="${c.nome}" oninput="atualizarConta(${c.id}, 'nome', this.value)" class="text-xs font-black uppercase text-blue-500 border-none w-full mb-1" />
-                        <div class="flex gap-4 text-[10px] font-bold text-slate-400 uppercase">
-                            <span>Invest: <input type="number" value="${c.invest}" oninput="atualizarConta(${c.id}, 'invest', this.value)" class="w-20 border-none text-slate-600 focus:ring-0" /></span>
-                            <span>Comissão: <input type="number" value="${c.com}" oninput="atualizarConta(${c.id}, 'com', this.value)" class="w-12 border-none text-slate-600 focus:ring-0" />%</span>
-                        </div>
-                        <div class="mt-2 flex gap-2 items-center text-xs">
-                            <label for="tipo-${c.id}" class="uppercase font-bold text-slate-400">Tipo:</label>
-                            <select id="tipo-${c.id}" onchange="atualizarConta(${c.id}, 'tipo', this.value)" class="border border-slate-300 rounded px-2 py-1 text-xs font-bold uppercase text-slate-600">
-                                <option value="SEU" ${c.tipo === 'SEU' ? 'selected' : ''}>SEU</option>
-                                <option value="SOCIEDADE" ${c.tipo === 'SOCIEDADE' ? 'selected' : ''}>SOCIEDADE</option>
-                                <option value="GESTÃO" ${c.tipo === 'GESTÃO' ? 'selected' : ''}>GESTÃO</option>
+            const div = document.createElement('div');
+            div.className = 'card-oled';
+            div.innerHTML = `
+                <button class="absolute top-4 right-4 text-slate-300 hover:text-red-500" onclick="apiExcluir(${c.id})">✕</button>
+                
+                <div class="mb-4">
+                    <input type="text" value="${c.nome}" oninput="apiUpdate(${c.id}, 'nome', this.value)" class="text-xs font-black uppercase text-blue-500 border-none w-full mb-1" />
+                    <div class="flex gap-2 text-[10px] font-bold text-slate-400 uppercase items-center">
+                        <label class="flex items-center gap-1">Invest:
+                            <input type="text" value="${fmt(c.investimento)}" oninput="apiMascaraInvestimento(this, ${c.id})" class="w-20 border-b border-slate-300 text-slate-600 focus:ring-0 font-mono" />
+                        </label>
+                        <label class="flex items-center gap-1">Comissão:
+                            <input type="number" value="${c.comissao}" min="0" max="100" oninput="apiUpdate(${c.id}, 'comissao', this.value)" class="w-12 border-b border-slate-300 text-slate-600 focus:ring-0" />%
+                        </label>
+                        <label class="flex items-center gap-1">Dono:
+                            <select onchange="apiUpdate(${c.id}, 'dono', this.value)" class="border-b border-slate-300 text-slate-600 focus:ring-0">
+                                <option value="seu" ${c.dono === 'seu' ? 'selected' : ''}>Seu</option>
+                                <option value="sociedade" ${c.dono === 'sociedade' ? 'selected' : ''}>Sociedade</option>
+                                <option value="gestao" ${c.dono === 'gestao' ? 'selected' : ''}>Gestão</option>
                             </select>
-                            <label for="dono-${c.id}" class="uppercase font-bold text-slate-400 ml-4">Dono:</label>
-                            <input type="text" id="dono-${c.id}" value="${c.dono}" oninput="atualizarConta(${c.id}, 'dono', this.value)" class="border border-slate-300 rounded px-2 py-1 text-xs font-bold uppercase text-slate-600 w-24" />
-                        </div>
+                        </label>
                     </div>
+                </div>
 
-                    <div class="mb-2">
-                        <p class="text-[9px] uppercase font-bold text-slate-400">Saldo</p>
-                        <input type="text" value="${fmt(c.saldo)}" oninput="atualizarSaldo(this, ${c.id})" onfocus="this.select()" class="text-3xl text-slate-800 font-mono font-bold w-full" />
-                    </div>
+                <div class="mb-2">
+                    <p class="text-[9px] uppercase font-bold text-slate-400">Saldo</p>
+                    <input type="text" value="${fmt(c.saldo)}" oninput="apiMascaraSaldo(this, ${c.id})" onfocus="this.select()" class="${db.privacidade ? 'valor-privado' : ''} text-3xl text-slate-800 font-mono font-bold w-full" />
+                </div>
 
-                    <div class="flex justify-between items-center pt-2 border-t border-slate-50">
-                        <span class="text-[10px] font-bold text-slate-400">Lucro Bruto:</span>
-                        <span class="text-sm font-mono font-bold ${corLucro}">${fmt(lucroBruto)}</span>
-                    </div>
-                `;
-                container.appendChild(div);
-            });
-            calcular();
+                <div class="flex justify-between items-center pt-2 border-t border-slate-50">
+                    <span class="text-[10px] font-bold text-slate-400">LUCRO DA CONTA (${donoTexto}):</span>
+                    <span class="text-sm font-mono font-bold ${corLucro}">${fmt(lucro)}</span>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+
+        calcular();
+    }
+
+    // Atualiza campo texto/number simples
+    window.apiUpdate = (id, campo, valor) => {
+        const item = db.contas.find(x => x.id === id);
+        if (!item) return;
+        if (campo === 'nome' || campo === 'dono') {
+            item[campo] = valor.toLowerCase() === 'seu' || valor.toLowerCase() === 'gestao' || valor.toLowerCase() === 'sociedade' ? valor.toLowerCase() : item[campo];
+            if (campo === 'nome') item[campo] = valor.toUpperCase();
+        } else if (campo === 'comissao') {
+            let n = parseFloat(valor);
+            if (isNaN(n) || n < 0) n = 0;
+            if (n > 100) n = 100;
+            item[campo] = n;
         }
+        debounceRender();
+    };
 
-        function atualizarConta(id, campo, valor) {
-            const conta = db.find(x => x.id === id);
-            if (!conta) return;
+    // Atualiza saldo com máscara BRL
+    window.apiMascaraSaldo = (el, id) => {
+        let v = el.value.replace(/\D/g, '');
+        let n = parseFloat((v / 100).toFixed(2)) || 0;
+        const item = db.contas.find(x => x.id === id);
+        if (!item) return;
+        item.saldo = n;
+        el.value = fmt(n);
+        debounceRender();
+    };
 
-            if (campo === 'nome' || campo === 'dono' || campo === 'tipo') {
-                conta[campo] = valor.toUpperCase();
-            } else if (campo === 'invest' || campo === 'com') {
-                conta[campo] = parseFloat(valor) || 0;
-            }
-            salvar();
-            render();
+    // Atualiza investimento com máscara BRL
+    window.apiMascaraInvestimento = (el, id) => {
+        let v = el.value.replace(/\D/g, '');
+        let n = parseFloat((v / 100).toFixed(2)) || 0;
+        const item = db.contas.find(x => x.id === id);
+        if (!item) return;
+        item.investimento = n;
+        el.value = fmt(n);
+        debounceRender();
+    };
+
+    // Excluir conta
+    window.apiExcluir = (id) => {
+        if (confirm("Remover conta?")) {
+            db.contas = db.contas.filter(x => x.id !== id);
+            debounceRender();
         }
+    };
 
-        function atualizarSaldo(el, id) {
-            let v = el.value.replace(/\D/g, '');
-            let n = parseFloat((v / 100).toFixed(2)) || 0;
-            const conta = db.find(x => x.id === id);
-            if (!conta) return;
-            conta.saldo = n;
-            el.value = fmt(n);
-            salvar();
-            render();
-        }
+    // Criar nova conta
+    document.getElementById('btnNovoCard').onclick = () => {
+        db.contas.push({
+            id: Date.now(),
+            nome: 'NOVA CONTA',
+            saldo: 0,
+            investimento: 0,
+            comissao: 100,
+            dono: 'seu'
+        });
+        debounceRender();
+    };
 
-        function excluirConta(id) {
-            if (confirm('Remover conta?')) {
-                db = db.filter(x => x.id !== id);
-                salvar();
-                render();
-            }
-        }
+    // Renderizar na inicialização
+    render();
+</script>
 
-        document.getElementById('btnNovoCard').onclick = () => {
-            const novo = {
-                id: Date.now(),
-                nome: 'NOVA CONTA',
-                saldo: 0,
-                invest: 0,
-                com: 100,
-                tipo: 'SEU',
-                dono: 'VOCÊ'
-            };
-            db.push(novo);
-            salvar();
-            render();
-        };
-
-        // Renderiza a página inicialmente
-        render();
-    </script>
 </body>
 </html>
