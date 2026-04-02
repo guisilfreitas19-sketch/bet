@@ -2,19 +2,31 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<title>Bet Dashboard Profissional v3.1</title>
+<title>Bet Dashboard Profissional v4.1</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
 
 <style>
 body { background:#f8fafc; font-family:Inter; }
-.card { background:#fff; border:1px solid #e2e8f0; border-radius:24px; padding:20px; transition:.2s; position:relative; }
-.card:hover { border-color:#3b82f6; transform:translateY(-3px); }
-input, select { border-bottom:1px solid #e2e8f0; font-family:'JetBrains Mono'; padding:2px 4px; }
-input:focus, select:focus { outline:none; border-color:#3b82f6; }
-.select-type { border:1px solid #e2e8f0; border-radius:12px; padding:2px 6px; font-size:12px; }
+.card { background:#fff; border-radius:1.5rem; padding:1.5rem; transition:.3s; position:relative; display:flex; flex-direction:column; justify-content:space-between; height:100%; border:1px solid #e2e8f0; }
+.card:hover { transform:translateY(-4px); border-color:#3b82f6; box-shadow:0 10px 30px rgba(59,130,246,0.1); }
 .remove-btn { position:absolute; top:12px; right:12px; color:#f87171; cursor:pointer; font-weight:bold; }
+input, select { font-family:'JetBrains Mono'; padding:2px 6px; border:1px solid #e2e8f0; border-radius:8px; width:100%; }
+input:focus, select:focus { outline:none; border-color:#3b82f6; }
+.select-type { padding:2px 6px; font-size:12px; }
+.card-header, .card-footer { display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem; flex-wrap:wrap; gap:4px; }
+.card-body { display:flex; justify-content:space-between; gap:1rem; margin-bottom:0.5rem; flex-wrap:wrap; }
+.text-lucro { font-family:'JetBrains Mono'; font-weight:700; font-size:1.25rem; }
+.tipo-seu { border-left:4px solid #10b981; padding-left:0.5rem; }
+.tipo-sociedade { border-left:4px solid #3b82f6; padding-left:0.5rem; }
+.tipo-gestao { border-left:4px solid #f59e0b; padding-left:0.5rem; }
+.legend { display:flex; gap:1rem; margin-bottom:1rem; flex-wrap:wrap; font-size:12px; }
+.legend span { display:flex; align-items:center; gap:0.25rem; }
+.legend .block { width:12px; height:12px; display:inline-block; border-radius:2px; }
+.block-seu { background:#10b981; }
+.block-sociedade { background:#3b82f6; }
+.block-gestao { background:#f59e0b; }
 </style>
 </head>
 
@@ -22,7 +34,14 @@ input:focus, select:focus { outline:none; border-color:#3b82f6; }
 
 <div class="max-w-6xl mx-auto">
 <p class="text-xs text-gray-400 mb-2">SEU LUCRO LÍQUIDO</p>
-<h1 id="total" class="text-5xl text-emerald-500 font-mono mb-10">R$ 0,00</h1>
+<h1 id="total" class="text-5xl text-emerald-500 font-mono mb-4">R$ 0,00</h1>
+
+<!-- Legenda -->
+<div class="legend">
+  <span><span class="block block-seu"></span> SEU: dinheiro que você colocou, você recebe todo lucro proporcional à comissão</span>
+  <span><span class="block block-sociedade"></span> SOCIEDADE: dinheiro de terceiros que você administra, recebe apenas % do lucro</span>
+  <span><span class="block block-gestao"></span> GESTÃO: dinheiro de terceiros que você gere, você ganha % do lucro conforme acordado</span>
+</div>
 
 <button onclick="novo()" class="bg-black text-white px-6 py-3 rounded-xl mb-6 text-xs font-bold">
 + NOVA CONTA
@@ -61,28 +80,28 @@ function render(){
  data.forEach(c=>{
   let saldo = safe(c.saldo), invest = safe(c.invest), lucro = saldo - invest;
   let cor = lucro>=0?'text-green-500':'text-red-500';
+  let tipoClass = c.tipo==='SEU'?'tipo-seu':(c.tipo==='SOCIEDADE'?'tipo-sociedade':'tipo-gestao');
 
   el.innerHTML += `
-  <div class="card">
+  <div class="card ${tipoClass}">
     <span class="remove-btn" onclick="del(${c.id})">✕</span>
 
-    <input value="${c.nome}" oninput="upd(${c.id},'nome',this.value)" 
-      class="text-blue-500 font-bold w-full mb-2">
+    <div class="card-header">
+      <input value="${c.nome}" oninput="upd(${c.id},'nome',this.value)" class="text-blue-500 font-bold w-full">
+    </div>
 
-    <div class="flex justify-between text-xs text-gray-400 mb-2 gap-2 flex-wrap">
+    <div class="card-body">
       <div>
-        Invest:
-        <input value="${fmt(invest)}" oninput="maskInvest(this,${c.id})" onfocus="this.select()" class="w-24">
+        Invest: <input value="${fmt(invest)}" oninput="maskInvest(this,${c.id})" onfocus="this.select()">
       </div>
       <div>
-        Comissão:
-        <input type="number" value="${c.com}" oninput="upd(${c.id},'com',this.value)" class="w-12">%
+        Comissão: <input type="number" value="${c.com}" oninput="upd(${c.id},'com',this.value)" class="w-12">%
       </div>
     </div>
 
-    <div class="flex justify-between text-xs text-gray-400 mb-2 gap-2 flex-wrap">
+    <div class="card-body">
       <div>
-        Tipo:
+        Tipo: 
         <select class="select-type" onchange="upd(${c.id},'tipo',this.value)">
           <option ${c.tipo==='SEU'?'selected':''}>SEU</option>
           <option ${c.tipo==='SOCIEDADE'?'selected':''}>SOCIEDADE</option>
@@ -90,18 +109,15 @@ function render(){
         </select>
       </div>
       <div>
-        Dono do dinheiro:
-        <input value="${c.dono}" oninput="upd(${c.id},'dono',this.value)" class="w-24">
+        Dono do dinheiro: <input value="${c.dono}" oninput="upd(${c.id},'dono',this.value)">
       </div>
     </div>
 
-    <div class="mb-2">
-      Saldo:
-      <input value="${fmt(saldo)}" oninput="maskSaldo(this,${c.id})" onfocus="this.select()" class="text-2xl w-full">
+    <div class="card-body">
+      Saldo: <input value="${fmt(saldo)}" oninput="maskSaldo(this,${c.id})" onfocus="this.select()" class="text-2xl w-full">
     </div>
 
-    <div class="${cor} font-bold">${fmt(lucro)}</div>
-
+    <div class="card-footer ${cor} text-lucro">${fmt(lucro)}</div>
     ${c.dono.toUpperCase()!=='VOCE'?'<div class="text-xs text-amber-500 mt-2">Dinheiro de terceiros (você só ganha % do lucro)</div>':''}
   </div>
   `;
@@ -110,21 +126,19 @@ function render(){
 }
 
 function upd(id,campo,val){
- let c=data.find(x=>x.id==id);
- if(!c) return;
- c[campo] = campo==='nome'||campo==='dono'?val.toUpperCase():val;
- salvar();
+ let c=data.find(x=>x.id==id); if(!c) return;
+ c[campo] = campo==='nome'||campo==='dono'?val.toUpperCase():val; salvar();
 }
 
 function maskSaldo(el,id){
  let v=el.value.replace(/\D/g,''); let n=safe(v/100);
- let c = data.find(x=>x.id==id); if(c) c.saldo=n;
+ let c=data.find(x=>x.id==id); if(c)c.saldo=n;
  el.value=fmt(n); salvar();
 }
 
 function maskInvest(el,id){
  let v=el.value.replace(/\D/g,''); let n=safe(v/100);
- let c = data.find(x=>x.id==id); if(c) c.invest=n;
+ let c=data.find(x=>x.id==id); if(c)c.invest=n;
  el.value=fmt(n); salvar();
 }
 
