@@ -2,7 +2,7 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<title>Bet Dashboard v1.4</title>
+<title>Bet Dashboard v1.5</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
@@ -10,6 +10,7 @@
 <style>
 body { background:#f8fafc; font-family:Inter; }
 .card { background:#fff; border:1px solid #e2e8f0; border-radius:24px; padding:20px; }
+.card:hover { border-color:#3b82f6; transform:translateY(-3px); transition:.2s; }
 input { border-bottom:1px solid #e2e8f0; font-family:'JetBrains Mono'; }
 input:focus { outline:none; border-color:#3b82f6; }
 </style>
@@ -19,10 +20,10 @@ input:focus { outline:none; border-color:#3b82f6; }
 
 <div class="max-w-6xl mx-auto">
 
-<h1 class="text-gray-400 text-xs mb-2">SEU LUCRO LÍQUIDO</h1>
-<h2 id="total" class="text-5xl text-green-500 font-mono mb-10">R$ 0,00</h2>
+<p class="text-xs text-gray-400 mb-2">SEU LUCRO LÍQUIDO</p>
+<h1 id="total" class="text-5xl text-emerald-500 font-mono mb-10">R$ 0,00</h1>
 
-<button onclick="novo()" class="bg-black text-white px-5 py-3 rounded-xl mb-6">
+<button onclick="novo()" class="bg-black text-white px-6 py-3 rounded-xl mb-6 text-xs font-bold">
 + NOVA CONTA
 </button>
 
@@ -31,8 +32,10 @@ input:focus { outline:none; border-color:#3b82f6; }
 </div>
 
 <script>
+// proteção
 function safe(n){ return isNaN(n) ? 0 : Number(n); }
 
+// carregar
 let data = JSON.parse(localStorage.getItem('db')) || [
  {id:1,nome:'EVERTON',saldo:3400,invest:4000,com:90},
  {id:2,nome:'GUILHERME',saldo:1050,invest:1000,com:100},
@@ -41,11 +44,13 @@ let data = JSON.parse(localStorage.getItem('db')) || [
 
 const fmt = v => safe(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 
+// salvar
 function salvar(){
  localStorage.setItem('db',JSON.stringify(data));
  calc();
 }
 
+// cálculo FINAL correto
 function calc(){
  let total = 0;
 
@@ -55,12 +60,22 @@ function calc(){
   let com = safe(c.com);
 
   let lucro = saldo - invest;
-
   let meu = 0;
 
-  // 🔥 REGRA NOVA
+  // 🔵 SE O DINHEIRO É SEU
   if(invest > 0){
-    meu = lucro > 0 ? lucro*(com/100) : lucro;
+    meu = lucro > 0
+      ? lucro * (com/100)
+      : lucro;
+  }
+
+  // 🟡 DINHEIRO DE TERCEIROS (HINGRID)
+  else {
+    if(lucro > 0){
+      meu = lucro * (com/100);
+    } else {
+      meu = 0;
+    }
   }
 
   total += meu;
@@ -69,6 +84,7 @@ function calc(){
  document.getElementById('total').innerText = fmt(total);
 }
 
+// render
 function render(){
  let el = document.getElementById('contas');
  el.innerHTML = '';
@@ -84,24 +100,37 @@ function render(){
   <div class="card">
     <button onclick="del(${c.id})" class="float-right text-red-400">✕</button>
 
-    <input value="${c.nome}" oninput="upd(${c.id},'nome',this.value)" class="text-blue-500 font-bold w-full mb-3">
+    <input value="${c.nome}" oninput="upd(${c.id},'nome',this.value)" 
+        class="text-blue-500 font-bold w-full mb-3">
 
     <div class="text-xs text-gray-400 mb-2">
       Invest:
-      <input value="${fmt(invest)}" oninput="maskInvest(this,${c.id})" onfocus="this.select()" class="w-24">
+      <input 
+        value="${fmt(invest)}" 
+        oninput="maskInvest(this,${c.id})" 
+        onfocus="this.select()" 
+        class="w-24">
 
       Comissão:
-      <input type="number" value="${c.com}" oninput="upd(${c.id},'com',this.value)" class="w-12">%
+      <input 
+        type="number" 
+        value="${c.com}" 
+        oninput="upd(${c.id},'com',this.value)" 
+        class="w-12">%
     </div>
 
     <div class="mb-2">
       Saldo:
-      <input value="${fmt(saldo)}" oninput="maskSaldo(this,${c.id})" onfocus="this.select()" class="text-2xl w-full">
+      <input 
+        value="${fmt(saldo)}" 
+        oninput="maskSaldo(this,${c.id})" 
+        onfocus="this.select()" 
+        class="text-2xl w-full">
     </div>
 
     <div class="${cor} font-bold">${fmt(lucro)}</div>
 
-    ${invest==0 ? '<div class="text-xs text-gray-400 mt-2">Conta de terceiros (não entra no seu lucro)</div>' : ''}
+    ${invest==0 ? '<div class="text-xs text-amber-500 mt-2">Conta de terceiro (você só ganha no lucro)</div>' : ''}
   </div>
   `;
  });
@@ -109,6 +138,7 @@ function render(){
  calc();
 }
 
+// update
 function upd(id,campo,val){
  let c = data.find(x=>x.id==id);
  if(!c) return;
@@ -117,6 +147,7 @@ function upd(id,campo,val){
  salvar();
 }
 
+// máscara saldo
 function maskSaldo(el,id){
  let v = el.value.replace(/\D/g,'');
  let n = safe(v/100);
@@ -128,6 +159,7 @@ function maskSaldo(el,id){
  salvar();
 }
 
+// máscara investimento
 function maskInvest(el,id){
  let v = el.value.replace(/\D/g,'');
  let n = safe(v/100);
@@ -139,16 +171,24 @@ function maskInvest(el,id){
  salvar();
 }
 
+// deletar
 function del(id){
- if(confirm('Remover?')){
+ if(confirm('Remover conta?')){
   data = data.filter(x=>x.id!=id);
   salvar();
   render();
  }
 }
 
+// nova conta
 function novo(){
- data.push({id:Date.now(),nome:'NOVA',saldo:0,invest:0,com:100});
+ data.push({
+  id:Date.now(),
+  nome:'NOVA CONTA',
+  saldo:0,
+  invest:0,
+  com:100
+ });
  salvar();
  render();
 }
