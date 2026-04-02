@@ -2,7 +2,7 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<title>Bet Dashboard Profissional v4.1</title>
+<title>Bet Dashboard Profissional v4.2</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
@@ -43,7 +43,7 @@ input:focus, select:focus { outline:none; border-color:#3b82f6; }
   <span><span class="block block-gestao"></span> GESTÃO: dinheiro de terceiros que você gere, você ganha % do lucro conforme acordado</span>
 </div>
 
-<button onclick="novo()" class="bg-black text-white px-6 py-3 rounded-xl mb-6 text-xs font-bold">
+<button id="btnNovo" class="bg-black text-white px-6 py-3 rounded-xl mb-6 text-xs font-bold">
 + NOVA CONTA
 </button>
 
@@ -53,15 +53,23 @@ input:focus, select:focus { outline:none; border-color:#3b82f6; }
 <script>
 function safe(n){ return isNaN(n)?0:Number(n); }
 
-let data = JSON.parse(localStorage.getItem('db')) || [
- {id:1,nome:'EVERTON',saldo:3400,invest:4000,com:90,tipo:'SEU',dono:'VOCE'},
- {id:2,nome:'GUILHERME',saldo:1050,invest:1000,com:100,tipo:'SOCIEDADE',dono:'VOCE'},
- {id:3,nome:'HINGRID',saldo:1000,invest:0,com:50,tipo:'GESTAO',dono:'HINGRID'}
-];
+// Usa localStorage, ou cria com contas iniciais
+let data = JSON.parse(localStorage.getItem('db'));
+if(!data) {
+  data = [
+    {id:1,nome:'EVERTON',saldo:3400,invest:4000,com:90,tipo:'SEU',dono:'VOCE'},
+    {id:2,nome:'GUILHERME',saldo:1050,invest:1000,com:100,tipo:'SOCIEDADE',dono:'VOCE'},
+    {id:3,nome:'HINGRID',saldo:1000,invest:0,com:50,tipo:'GESTAO',dono:'HINGRID'}
+  ];
+  localStorage.setItem('db',JSON.stringify(data));
+}
 
 const fmt = v => safe(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 
-function salvar(){ localStorage.setItem('db',JSON.stringify(data)); calc(); }
+function salvar(){ 
+  localStorage.setItem('db',JSON.stringify(data)); 
+  calc(); 
+}
 
 function calc(){
  let total = 0;
@@ -127,23 +135,31 @@ function render(){
 
 function upd(id,campo,val){
  let c=data.find(x=>x.id==id); if(!c) return;
- c[campo] = campo==='nome'||campo==='dono'?val.toUpperCase():val; salvar();
+ c[campo] = campo==='nome'||campo==='dono'?val.toUpperCase():val; salvar(); render();
 }
 
 function maskSaldo(el,id){
  let v=el.value.replace(/\D/g,''); let n=safe(v/100);
  let c=data.find(x=>x.id==id); if(c)c.saldo=n;
- el.value=fmt(n); salvar();
+ el.value=fmt(n); salvar(); render();
 }
 
 function maskInvest(el,id){
  let v=el.value.replace(/\D/g,''); let n=safe(v/100);
  let c=data.find(x=>x.id==id); if(c)c.invest=n;
- el.value=fmt(n); salvar();
+ el.value=fmt(n); salvar(); render();
 }
 
-function del(id){ if(confirm('Remover conta?')){ data=data.filter(x=>x.id!=id); salvar(); render(); } }
-function novo(){ data.push({id:Date.now(),nome:'NOVA CONTA',saldo:0,invest:0,com:100,tipo:'SEU',dono:'VOCE'}); salvar(); render(); }
+function del(id){ 
+ if(confirm('Remover conta?')){ 
+   data=data.filter(x=>x.id!=id); salvar(); render(); 
+ } 
+}
+
+document.getElementById('btnNovo').onclick = function(){
+ data.push({id:Date.now(),nome:'NOVA CONTA',saldo:0,invest:0,com:100,tipo:'SEU',dono:'VOCE'});
+ salvar(); render();
+}
 
 render();
 </script>
