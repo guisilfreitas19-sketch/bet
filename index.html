@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Controle de Saldo de Conta</title>
+    <title>Controle de Saldo - Casas de Apostas</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -97,12 +97,12 @@
 <body>
 
 <div class="container">
-    <h2>Controle de Saldo da Conta</h2>
+    <h2>Controle de Saldo - Casas de Apostas</h2>
 
-    <!-- Formulário para registrar o saldo -->
+    <!-- Formulário para registrar saldos de casas -->
     <div class="card">
         <div class="card-header">
-            <h5>Registrar Saldo Diário</h5>
+            <h5>Registrar Saldos Diários</h5>
         </div>
         <div class="card-body">
             <form id="balance-form">
@@ -110,16 +110,30 @@
                     <label for="date" class="form-label">Data</label>
                     <input type="date" class="form-control" id="date" required>
                 </div>
-                <div class="mb-3">
-                    <label for="balance" class="form-label">Saldo da Conta</label>
-                    <input type="number" class="form-control" id="balance" placeholder="Digite o saldo" required>
+                
+                <!-- Lista de Casas de Apostas -->
+                <div id="betting-houses">
+                    <div class="mb-3">
+                        <label for="house-name-1" class="form-label">Casa 1</label>
+                        <input type="number" class="form-control" id="balance-1" placeholder="Saldo da Casa 1" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="house-name-2" class="form-label">Casa 2</label>
+                        <input type="number" class="form-control" id="balance-2" placeholder="Saldo da Casa 2" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="house-name-3" class="form-label">Casa 3</label>
+                        <input type="number" class="form-control" id="balance-3" placeholder="Saldo da Casa 3" required>
+                    </div>
+                    <!-- Você pode adicionar mais casas aqui conforme necessário -->
                 </div>
-                <button type="submit" class="btn btn-primary">Registrar Saldo</button>
+
+                <button type="submit" class="btn btn-primary">Registrar Saldos</button>
             </form>
         </div>
     </div>
 
-    <!-- Resumo de Lucros e Prejuízos -->
+    <!-- Resumo de Lucros/Prejuízos -->
     <div class="card">
         <div class="card-header">
             <h5>Resumo das Operações</h5>
@@ -149,11 +163,12 @@
                     <tr>
                         <th>#</th>
                         <th>Data</th>
+                        <th>Casa</th>
                         <th>Saldo</th>
                     </tr>
                 </thead>
                 <tbody id="balance-history">
-                    <!-- Aqui serão registradas as entradas de saldo -->
+                    <!-- Os registros das casas de apostas serão exibidos aqui -->
                 </tbody>
             </table>
         </div>
@@ -169,28 +184,36 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-// Função para registrar o saldo diário e calcular lucro/prejuízo
-let lastBalance = 0;
+// Função para registrar os saldos diários
+let houseBalance = {};
 
 $('#balance-form').on('submit', function(e) {
     e.preventDefault();
 
     const date = $('#date').val();
-    const balance = parseFloat($('#balance').val());
+    const houses = $('#betting-houses input');
 
-    // Atualizando o histórico de saldos
-    const balanceRow = `<tr><td>#${$('#balance-history tr').length + 1}</td><td>${date}</td><td>R$ ${balance.toFixed(2)}</td></tr>`;
-    $('#balance-history').append(balanceRow);
+    houses.each(function(index) {
+        const balance = parseFloat($(this).val());
+        const houseName = $(this).attr('id').replace('balance-', '');
+        
+        // Se for a primeira vez, inicializa o saldo
+        if (!houseBalance[houseName]) {
+            houseBalance[houseName] = [];
+        }
 
-    // Atualizando o lucro ou prejuízo diário
-    let dailyProfit = balance - lastBalance;
-    $('#daily-profit').text(`R$ ${dailyProfit.toFixed(2)}`);
+        // Registra o saldo da casa no histórico
+        houseBalance[houseName].push({
+            date: date,
+            balance: balance
+        });
 
-    // Atualizando o saldo atual
-    lastBalance = balance;
-    $('#current-balance').text(`R$ ${balance.toFixed(2)}`);
+        // Exibe os saldos registrados
+        const balanceRow = `<tr><td>#${houseBalance[houseName].length}</td><td>${date}</td><td>${houseName}</td><td>R$ ${balance.toFixed(2)}</td></tr>`;
+        $('#balance-history').append(balanceRow);
+    });
 
-    // Limpar formulário
+    // Limpar o formulário
     $('#balance-form')[0].reset();
 });
 </script>
