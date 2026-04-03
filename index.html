@@ -19,7 +19,7 @@ input:focus, select:focus { border-color: #3b82f6; }
 
 .valor-privado { filter: blur(14px); opacity: 0.2; pointer-events: none; }
 
-.legenda { display:flex; gap:1.5rem; flex-wrap:wrap; font-size:0.85rem; margin-bottom:1rem; }
+.legenda { display:flex; gap:1.5rem; flex-wrap:wrap; font-size:0.85rem; margin-top:2rem; }
 .legenda div { width:20px; height:20px; border-radius:4px; }
 .cor-seu { background:#059669; }
 .cor-sociedade { background:#2563eb; }
@@ -37,17 +37,18 @@ button { cursor:pointer; }
   <p class="text-xs uppercase text-slate-400 font-black mb-2 tracking-wide">Seu Lucro Líquido Total</p>
   <p id="exibirLucro" class="text-4xl font-mono font-bold text-emerald-500">R$ 0,00</p>
 
-  <div class="legenda mt-4">
-    <span><div class="cor-seu"></div>SEU: dinheiro seu, você fica com 100% do resultado</span>
-    <span><div class="cor-sociedade"></div>SOCIEDADE: dinheiro seu, paga % de comissão ao dono da conta</span>
-    <span><div class="cor-gestao"></div>GESTÃO: dinheiro de terceiros, você recebe % do lucro</span>
-  </div>
-
   <button id="btnNovoCard" class="mt-4 bg-black text-white py-2 px-4 rounded-xl font-bold text-xs uppercase hover:bg-gray-800 transition">＋ Nova Conta</button>
 </div>
 
 <!-- Lista de Contas -->
 <div id="listaContas" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+
+<!-- Legenda no rodapé -->
+<div class="legenda">
+  <span><div class="cor-seu"></div>SEU: dinheiro seu, você fica com 100% do resultado</span>
+  <span><div class="cor-sociedade"></div>SOCIEDADE: dinheiro seu, paga % de comissão ao dono da conta</span>
+  <span><div class="cor-gestao"></div>GESTÃO: dinheiro de terceiros, você recebe % do lucro</span>
+</div>
 
 </div>
 
