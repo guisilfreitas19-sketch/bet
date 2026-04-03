@@ -2,78 +2,92 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Gestão Pro - V2.5 Detalhada</title>
+    <title>Gestão Pro - V2.6 Meta</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #f8fafc; color: #1e293b; font-family: 'Inter', sans-serif; }
-        .card-light { background: white; border-radius: 2rem; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05); padding: 2rem; border: 1px solid #e2e8f0; }
+        .card-light { background: white; border-radius: 2rem; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05); padding: 2rem; border: 1px solid #e2e8f0; transition: all 0.2s; }
         .header-glass { background: white; border-radius: 2.5rem; border: 1px solid #e2e8f0; position: sticky; top: 20px; z-index: 50; }
-        input { background: #f1f5f9; border-radius: 0.75rem; padding: 0.6rem; outline: none; border: 1px solid #e2e8f0; width: 100%; font-family: monospace; font-weight: bold; }
+        input { background: #f1f5f9; border-radius: 0.75rem; padding: 0.6rem; outline: none; border: 1px solid #e2e8f0; width: 100%; font-family: monospace; font-weight: bold; text-align: right; }
         input:focus { border-color: #3b82f6; background: white; }
         .mini-label { font-size: 9px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; }
-        .badge-comissao { font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 6px; }
+        .progress-fill { transition: width 1s ease-in-out; }
     </style>
 </head>
 <body class="p-6 md:p-12">
 
     <div class="max-w-7xl mx-auto">
-        <div class="header-glass p-8 mb-12 shadow-sm border-t-4 border-blue-500">
+        <div class="header-glass p-8 mb-8 shadow-sm border-t-4 border-blue-500">
             <div class="grid grid-cols-1 lg:grid-cols-5 gap-8 items-center">
                 <div class="lg:col-span-1 border-r border-slate-100 pr-6">
                     <p class="mini-label mb-2">Aporte Próprio</p>
                     <p id="exibirInvestimentoTotal" class="text-2xl font-mono font-bold text-slate-700">R$ 0,00</p>
                 </div>
-                <div class="lg:col-span-2 px-4 text-center lg:text-left">
+                <div class="lg:col-span-2 px-4">
                     <p class="mini-label mb-2">Lucro Real Líquido</p>
                     <p id="exibirLucro" class="text-5xl font-mono font-black tracking-tighter text-emerald-600">R$ 0,00</p>
-                    <div class="flex justify-center lg:justify-start gap-4 mt-2">
+                    <div class="flex gap-4 mt-2">
                         <div class="text-[10px] font-bold text-slate-500">🏦 Próprio: <span id="resumoProprio" class="text-emerald-600">R$ 0,00</span></div>
                         <div class="text-[10px] font-bold text-slate-500">🤝 Comissões: <span id="resumoComissoes" class="text-blue-600">R$ 0,00</span></div>
                     </div>
                 </div>
-                <div class="lg:col-span-1 bg-emerald-50 p-4 rounded-2xl border border-emerald-100 text-center">
-                    <p class="mini-label text-emerald-700 mb-1">Disponível p/ Saque</p>
-                    <p id="exibirSaque" class="text-2xl font-mono font-bold text-emerald-600">R$ 0,00</p>
-                </div>
-                <div class="lg:col-span-1 flex flex-col gap-2">
-                    <button onclick="addConta()" class="bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl text-[10px] font-black uppercase">＋ Nova Conta</button>
+                <div class="lg:col-span-2 bg-slate-50 p-6 rounded-3xl border border-slate-200">
+                    <div class="flex justify-between items-center mb-2">
+                        <p class="mini-label text-slate-500">Meta Mensal de Lucro</p>
+                        <input type="text" id="inputMeta" class="w-32 text-xs py-1 px-2 bg-white" placeholder="Definir Meta">
+                    </div>
+                    <div class="w-full bg-slate-200 h-4 rounded-full overflow-hidden">
+                        <div id="barraMeta" class="progress-fill h-full bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.5)]" style="width: 0%"></div>
+                    </div>
+                    <div class="flex justify-between mt-2">
+                        <p id="porcentagemMeta" class="text-[10px] font-black text-emerald-600">0%</p>
+                        <p id="faltaMeta" class="text-[10px] font-bold text-slate-400 uppercase">Faltam R$ 0,00</p>
+                    </div>
                 </div>
             </div>
+        </div>
+
+        <div class="flex justify-end mb-8 gap-3">
+             <button onclick="addConta()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-200 transition-all active:scale-95">＋ Adicionar Operação</button>
         </div>
 
         <div id="listaContas" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"></div>
     </div>
 
     <script>
-        let db = JSON.parse(localStorage.getItem('c_v25')) || [
-            { id: 1, nome: 'BETANO - EVERTON', inicial: 4000, saldo: 5000, comissao: 10, proprio: true },
-            { id: 2, nome: 'ESTRELA - GUILHERME', inicial: 1000, saldo: 2000, comissao: 0, proprio: true },
-            { id: 3, nome: 'BETANO - HINGRID', inicial: 1000, saldo: 2000, comissao: 50, proprio: false }
-        ];
+        let db = JSON.parse(localStorage.getItem('c_v26_data')) || {
+            meta: 5000,
+            contas: [
+                { id: 1, nome: 'BETANO - EVERTON', inicial: 4000, saldo: 5000, comissao: 10, proprio: true },
+                { id: 2, nome: 'ESTRELA - GUILHERME', inicial: 1000, saldo: 2000, comissao: 0, proprio: true },
+                { id: 3, nome: 'BETANO - HINGRID', inicial: 1000, saldo: 2000, comissao: 50, proprio: false }
+            ]
+        };
 
         const fmt = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+        // Máscara estilo Banco (Direita para Esquerda)
+        function aplicarMascara(valor) {
+            let v = String(valor).replace(/\D/g, '');
+            return (Number(v) / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+        }
 
         function calcular() {
             let aporte = 0, lucroProprio = 0, comissoes = 0;
             
-            db.forEach(c => {
+            db.contas.forEach(c => {
                 const lucroBruto = c.saldo - c.inicial;
                 const valorComR$ = lucroBruto > 0 ? lucroBruto * (c.comissao / 100) : 0;
                 
-                // Elementos do Card
                 const resEl = document.getElementById(`res-${c.id}`);
                 const boxEl = document.getElementById(`box-${c.id}`);
-                const comEl = document.getElementById(`com-val-${c.id}`);
-                const comLabel = document.getElementById(`com-label-${c.id}`);
+                const comValEl = document.getElementById(`com-val-${c.id}`);
 
                 if(resEl) {
                     resEl.innerText = fmt(lucroBruto);
                     boxEl.className = `mt-4 p-4 rounded-xl border ${lucroBruto >= 0 ? 'bg-emerald-50 border-emerald-100 text-emerald-700' : 'bg-red-50 border-red-100 text-red-600'}`;
-                    
-                    // Atualiza o valor da comissão no card
-                    comEl.innerText = fmt(valorComR$);
-                    comLabel.innerText = c.proprio ? "Comissão a Pagar:" : "Sua Comissão:";
-                    comEl.className = `text-xs font-bold ${c.proprio ? 'text-red-500' : 'text-blue-600'}`;
+                    comValEl.innerText = fmt(valorComR$);
+                    comValEl.className = `text-xs font-bold ${c.proprio ? 'text-red-500' : 'text-blue-600'}`;
                 }
 
                 if (c.proprio) {
@@ -84,61 +98,74 @@
                 }
             });
 
-            const total = lucroProprio + comissoes;
+            const totalGeral = lucroProprio + comissoes;
+            
+            // Atualiza Header
             document.getElementById('exibirInvestimentoTotal').innerText = fmt(aporte);
-            document.getElementById('exibirLucro').innerText = fmt(total);
-            document.getElementById('exibirLucro').className = `text-5xl font-mono font-black tracking-tighter ${total >= 0 ? 'text-emerald-600' : 'text-red-500'}`;
+            document.getElementById('exibirLucro').innerText = fmt(totalGeral);
+            document.getElementById('exibirLucro').className = `text-5xl font-mono font-black tracking-tighter ${totalGeral >= 0 ? 'text-emerald-600' : 'text-red-500'}`;
             document.getElementById('resumoProprio').innerText = fmt(lucroProprio);
             document.getElementById('resumoComissoes').innerText = fmt(comissoes);
-            document.getElementById('exibirSaque').innerText = total > 0 ? fmt(total) : "R$ 0,00";
+
+            // Atualiza Lógica da Meta
+            const pct = Math.min(Math.max((totalGeral / db.meta) * 100, 0), 100);
+            const falta = Math.max(db.meta - totalGeral, 0);
             
-            localStorage.setItem('c_v25', JSON.stringify(db));
+            document.getElementById('barraMeta').style.width = `${pct}%`;
+            document.getElementById('porcentagemMeta').innerText = `${pct.toFixed(1)}%`;
+            document.getElementById('faltaMeta').innerText = falta > 0 ? `Faltam ${fmt(falta)}` : "META ATINGIDA! ✅";
+            if(pct >= 100) document.getElementById('barraMeta').className = "progress-fill h-full bg-blue-500 shadow-[0_0_20px_rgba(59,130,246,0.6)]";
+
+            localStorage.setItem('c_v26_data', JSON.stringify(db));
         }
 
-        function updateField(id, field, value) {
-            const conta = db.find(c => c.id === id);
-            if (field === 'proprio') {
-                conta[field] = value;
-                render(); // Re-renderiza para mudar os labels de "Pagar/Receber"
+        window.handleInput = (el, id, field) => {
+            let v = el.value.replace(/\D/g, '');
+            let n = parseFloat(v) / 100;
+            
+            if(id === 'META') {
+                db.meta = n;
             } else {
-                conta[field] = parseFloat(value) || 0;
-                calcular();
+                db.contas.find(c => c.id === id)[field] = n;
             }
-        }
+            
+            el.value = aplicarMascara(v);
+            calcular();
+        };
 
         function addConta() {
-            db.push({ id: Date.now(), nome: 'NOVA CONTA', inicial: 0, saldo: 0, comissao: 0, proprio: true });
+            db.contas.push({ id: Date.now(), nome: 'NOVA CONTA', inicial: 0, saldo: 0, comissao: 0, proprio: true });
             render();
         }
 
         function excluir(id) {
-            if(confirm("Remover conta?")) { db = db.filter(c => c.id !== id); render(); }
+            if(confirm("Excluir conta?")) { db.contas = db.contas.filter(c => c.id !== id); render(); }
         }
 
         function render() {
             const container = document.getElementById('listaContas');
-            container.innerHTML = db.map(c => `
+            container.innerHTML = db.contas.map(c => `
                 <div class="card-light">
                     <div class="flex justify-between mb-6">
-                        <p class="text-[10px] font-black text-blue-600 uppercase tracking-tighter">${c.nome}</p>
-                        <button class="text-slate-300 hover:text-red-500" onclick="excluir(${c.id})">✕</button>
+                        <p class="text-[10px] font-black text-blue-600 uppercase tracking-widest">${c.nome}</p>
+                        <button class="text-slate-300 hover:text-red-500 transition-colors" onclick="excluir(${c.id})">✕</button>
                     </div>
 
                     <div class="grid grid-cols-2 gap-4 mb-4">
                         <div>
                             <p class="mini-label mb-1">Custo Inicial</p>
-                            <input type="number" step="0.01" value="${c.inicial}" oninput="updateField(${c.id}, 'inicial', this.value)">
+                            <input type="text" value="${aplicarMascara(c.inicial * 100)}" oninput="handleInput(this, ${c.id}, 'inicial')">
                         </div>
                         <div>
                             <p class="mini-label mb-1">Saldo Atual</p>
-                            <input type="number" step="0.01" value="${c.saldo}" oninput="updateField(${c.id}, 'saldo', this.value)">
+                            <input type="text" value="${aplicarMascara(c.saldo * 100)}" oninput="handleInput(this, ${c.id}, 'saldo')">
                         </div>
                     </div>
 
                     <div id="box-${c.id}">
                         <div class="flex justify-between items-center mb-1">
-                            <p class="text-[9px] font-bold opacity-70 uppercase tracking-tight">Resultado Bruto</p>
-                            <span id="com-label-${c.id}" class="text-[9px] font-black uppercase opacity-60"></span>
+                            <p class="text-[9px] font-bold opacity-50 uppercase">Resultado Bruto</p>
+                            <span class="text-[9px] font-black uppercase opacity-60">${c.proprio ? 'A Pagar' : 'A Receber'}</span>
                         </div>
                         <div class="flex justify-between items-end">
                             <p id="res-${c.id}" class="text-xl font-mono font-black">R$ 0,00</p>
@@ -146,21 +173,24 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-4 border-t pt-5 mt-5">
+                    <div class="grid grid-cols-2 gap-4 border-t border-slate-100 pt-5 mt-5">
                         <div>
                             <p class="mini-label text-blue-600 mb-1">Comissão %</p>
-                            <input type="number" value="${c.comissao}" oninput="updateField(${c.id}, 'comissao', this.value)">
+                            <input type="number" value="${c.comissao}" oninput="db.contas.find(x=>x.id===${c.id}).comissao=this.value; calcular()" class="text-center">
                         </div>
                         <label class="flex flex-col gap-1 cursor-pointer">
-                            <span class="mini-label">Origem do Capital</span>
-                            <div class="flex items-center gap-2">
-                                <input type="checkbox" ${c.proprio ? 'checked' : ''} onchange="updateField(${c.id}, 'proprio', this.checked)" class="w-5 h-5 accent-blue-600">
+                            <span class="mini-label">Origem</span>
+                            <div class="flex items-center gap-2 bg-slate-50 p-2 rounded-xl border border-slate-100">
+                                <input type="checkbox" ${c.proprio ? 'checked' : ''} onchange="db.contas.find(x=>x.id===${c.id}).proprio=this.checked; render()" class="w-4 h-4 accent-blue-600">
                                 <span class="text-[9px] font-black text-slate-500 uppercase">${c.proprio ? 'Meu Bolso' : 'Terceiro'}</span>
                             </div>
                         </label>
                     </div>
                 </div>
             `).join('');
+            
+            document.getElementById('inputMeta').value = aplicarMascara(db.meta * 100);
+            document.getElementById('inputMeta').oninput = function() { handleInput(this, 'META'); };
             calcular();
         }
 
