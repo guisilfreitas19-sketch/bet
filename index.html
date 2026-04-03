@@ -1,222 +1,248 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Controle de Saldo - Casas de Apostas</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>Financeiro Pro v10.3</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body {
-            font-family: 'Arial', sans-serif;
-            background-color: #f4f6f9;
-            color: #333;
-        }
-
-        .container {
-            margin-top: 50px;
-        }
-
-        .card {
-            border-radius: 12px;
-            background-color: #ffffff;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            margin-bottom: 20px;
-        }
-
-        .card-header {
-            background-color: #f8f9fa;
-            color: #333;
-            font-size: 1.2rem;
-            font-weight: bold;
-            border-bottom: 1px solid #ddd;
-        }
-
-        .card-body {
-            padding: 20px;
-        }
-
-        .btn-primary {
-            background-color: #007bff;
-            border-color: #007bff;
-            border-radius: 6px;
-        }
-
-        .btn-primary:hover {
-            background-color: #0056b3;
-            border-color: #0056b3;
-        }
-
-        .form-control, .form-select {
-            border-radius: 8px;
-            border: 1px solid #ddd;
-        }
-
-        .table th, .table td {
-            vertical-align: middle;
-        }
-
-        .table-striped tbody tr:nth-of-type(odd) {
-            background-color: #f7f7f7;
-        }
-
-        .footer {
-            text-align: center;
-            padding: 20px;
-            background-color: #f1f1f1;
-            margin-top: 20px;
-        }
-
-        .text-primary {
-            color: #007bff;
-        }
-
-        .text-success {
-            color: #28a745;
-        }
-
-        .text-danger {
-            color: #dc3545;
-        }
-
-        h2 {
-            font-size: 2rem;
-            font-weight: bold;
-            color: #333;
-            text-align: center;
-            margin-bottom: 40px;
-        }
-
-        .footer p {
-            margin: 0;
-            font-size: 0.9rem;
-            color: #777;
-        }
+        body { background-color: #f1f5f9; font-family: sans-serif; overflow: hidden; height: 100vh; }
+        @media print { .no-print { display: none !important; } body { overflow: visible; height: auto; } }
+        .cursor-edit { cursor: pointer; transition: background 0.2s; }
+        .cursor-edit:hover { background-color: #f0f9ff; }
+        .item-confirmado { border-left: 4px solid #10b981; background-color: #f8fafc; opacity: 0.8; }
+        .custom-scroll::-webkit-scrollbar { width: 4px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        button { cursor: pointer !important; user-select: none; transition: all 0.1s; }
+        button:active { transform: scale(0.95); }
     </style>
 </head>
-<body>
+<body class="p-4">
 
-<div class="container">
-    <h2>Controle de Saldo - Casas de Apostas</h2>
-
-    <!-- Formulário para registrar saldos de casas -->
-    <div class="card">
-        <div class="card-header">
-            <h5>Registrar Saldos Diários</h5>
+    <div class="max-w-6xl mx-auto h-full flex flex-col gap-4">
+        
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 shrink-0 font-bold">
+            <div class="bg-white p-4 rounded shadow border-l-4 border-blue-400">
+                <p class="text-[10px] text-gray-400 uppercase">Saldo Inicial</p>
+                <input type="text" id="f_saldo_ini" oninput="moneyMask(this); updateSaldoIni()" placeholder="R$ 0,00" class="text-xl text-blue-600 bg-transparent outline-none w-full font-black">
+            </div>
+            <div class="bg-white p-4 rounded shadow border-l-4 border-green-500">
+                <p class="text-[10px] text-gray-400 uppercase">Total Entradas</p>
+                <h2 id="displayReceber" class="text-xl text-green-600 font-black font-mono">R$ 0,00</h2>
+            </div>
+            <div class="bg-white p-4 rounded shadow border-l-4 border-red-500">
+                <p class="text-[10px] text-gray-400 uppercase">Total Saídas</p>
+                <h2 id="displayPagar" class="text-xl text-red-600 font-black font-mono">R$ 0,00</h2>
+            </div>
+            <div id="boxSaldo" class="bg-slate-800 p-4 rounded shadow text-white border-l-4 border-slate-500">
+                <p class="text-[10px] uppercase opacity-70">Saldo Final Previsto</p>
+                <h2 id="displaySaldo" class="text-xl font-black font-mono">R$ 0,00</h2>
+            </div>
         </div>
-        <div class="card-body">
-            <form id="balance-form">
-                <div class="mb-3">
-                    <label for="date" class="form-label">Data</label>
-                    <input type="date" class="form-control" id="date" required>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-2 shrink-0 bg-slate-800 p-2 rounded-lg shadow-inner">
+            <div class="flex items-center justify-between px-4 py-1 border-r border-slate-700">
+                <span class="text-[9px] font-black text-green-400 uppercase">RECEBIDO:</span>
+                <span id="realRecebido" class="text-sm font-bold text-white font-mono">R$ 0,00</span>
+            </div>
+            <div class="flex items-center justify-between px-4 py-1 border-r border-slate-700">
+                <span class="text-[9px] font-black text-red-400 uppercase">PAGO:</span>
+                <span id="realPago" class="text-sm font-bold text-white font-mono">R$ 0,00</span>
+            </div>
+            <div class="flex items-center justify-between px-4 py-1">
+                <span class="text-[9px] font-black text-blue-300 uppercase italic">SALDO EM MÃO:</span>
+                <span id="realSaldo" class="text-sm font-bold text-white font-mono">R$ 0,00</span>
+            </div>
+        </div>
+
+        <div class="flex-1 grid grid-cols-1 md:grid-cols-12 gap-4 min-h-0">
+            <div class="md:col-span-3 bg-white p-4 rounded shadow space-y-4 no-print border-t-4 border-blue-500 flex flex-col">
+                <div class="flex justify-between items-center border-b pb-2 mb-2 text-[10px] font-black text-blue-900 uppercase">
+                    <span>Financeiro App</span>
+                    <span class="bg-blue-100 px-2 rounded-full text-blue-600">v10.3</span>
                 </div>
+
+                <h2 id="formTitle" class="font-bold text-blue-600 text-[10px] uppercase tracking-widest">Novo Registro</h2>
                 
-                <!-- Lista de Casas de Apostas -->
-                <div id="betting-houses">
-                    <div class="mb-3">
-                        <label for="house-name-1" class="form-label">Casa 1</label>
-                        <input type="number" class="form-control" id="balance-1" placeholder="Saldo da Casa 1" required>
+                <div class="flex flex-col gap-3">
+                    <div class="flex gap-2 w-full">
+                        <input type="number" id="f_dia" placeholder="DIA" class="w-12 border p-2 rounded font-black text-center bg-gray-50 uppercase text-xs outline-blue-300">
+                        <input type="text" id="f_desc" placeholder="DESCRIÇÃO" class="flex-1 min-w-0 border p-2 rounded uppercase text-xs font-bold bg-gray-50 outline-blue-300">
                     </div>
-                    <div class="mb-3">
-                        <label for="house-name-2" class="form-label">Casa 2</label>
-                        <input type="number" class="form-control" id="balance-2" placeholder="Saldo da Casa 2" required>
+                    
+                    <input type="text" id="f_valor" oninput="moneyMask(this)" placeholder="R$ 0,00" class="w-full border p-3 rounded font-mono font-bold text-xl text-blue-700 bg-gray-50 outline-blue-300">
+                    
+                    <div class="flex gap-2">
+                        <button type="button" onclick="addItem('R')" class="flex-1 bg-green-500 text-white font-black py-4 rounded hover:bg-green-600 shadow uppercase text-[10px]">Receber</button>
+                        <button type="button" onclick="addItem('P')" class="flex-1 bg-red-500 text-white font-black py-4 rounded hover:bg-red-600 shadow uppercase text-[10px]">Pagar</button>
                     </div>
-                    <div class="mb-3">
-                        <label for="house-name-3" class="form-label">Casa 3</label>
-                        <input type="number" class="form-control" id="balance-3" placeholder="Saldo da Casa 3" required>
-                    </div>
-                    <!-- Você pode adicionar mais casas aqui conforme necessário -->
                 </div>
 
-                <button type="submit" class="btn btn-primary">Registrar Saldos</button>
-            </form>
-        </div>
-    </div>
-
-    <!-- Resumo de Lucros/Prejuízos -->
-    <div class="card">
-        <div class="card-header">
-            <h5>Resumo das Operações</h5>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
-                    <h6>Saldo Atual:</h6>
-                    <p id="current-balance" class="fs-4 text-primary">R$ 0,00</p>
+                <div class="mt-auto pt-4 border-t flex gap-2">
+                    <button onclick="window.print()" class="flex-1 border py-2 rounded font-bold text-[9px] uppercase text-gray-400 hover:bg-gray-100">PDF</button>
+                    <button onclick="limparTudo()" class="flex-1 border py-2 rounded font-bold text-[9px] uppercase text-red-200 hover:bg-red-50">Reset</button>
                 </div>
-                <div class="col-md-6">
-                    <h6>Lucro/Prejuízo do Dia:</h6>
-                    <p id="daily-profit" class="fs-4">R$ 0,00</p>
+            </div>
+
+            <div class="md:col-span-9 grid grid-cols-1 md:grid-cols-2 gap-4 h-full min-h-0 overflow-hidden font-bold">
+                <div class="flex flex-col gap-2 h-full min-h-0">
+                    <div class="bg-green-600 p-1 text-white text-[10px] uppercase text-center rounded shrink-0">Entradas (A Confirmar)</div>
+                    <div id="listR_pendente" class="flex-1 bg-white rounded shadow-sm overflow-y-auto p-2 space-y-1 custom-scroll"></div>
+                    
+                    <div class="bg-slate-500 p-1 text-white text-[10px] uppercase text-center rounded shrink-0">Entradas (Confirmadas)</div>
+                    <div id="listR_confirmado" class="flex-1 bg-slate-100 rounded shadow-sm overflow-y-auto p-2 space-y-1 border-2 border-dashed border-slate-200 custom-scroll"></div>
+                </div>
+
+                <div class="flex flex-col gap-2 h-full min-h-0">
+                    <div class="bg-red-600 p-1 text-white text-[10px] uppercase text-center rounded shrink-0">Saídas (A Confirmar)</div>
+                    <div id="listP_pendente" class="flex-1 bg-white rounded shadow-sm overflow-y-auto p-2 space-y-1 custom-scroll"></div>
+                    
+                    <div class="bg-slate-500 p-1 text-white text-[10px] uppercase text-center rounded shrink-0">Saídas (Confirmadas)</div>
+                    <div id="listP_confirmado" class="flex-1 bg-slate-100 rounded shadow-sm overflow-y-auto p-2 space-y-1 border-2 border-dashed border-slate-200 custom-scroll"></div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Histórico de Saldos -->
-    <div class="card">
-        <div class="card-header">
-            <h5>Histórico de Saldos</h5>
-        </div>
-        <div class="card-body">
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Data</th>
-                        <th>Casa</th>
-                        <th>Saldo</th>
-                    </tr>
-                </thead>
-                <tbody id="balance-history">
-                    <!-- Os registros das casas de apostas serão exibidos aqui -->
-                </tbody>
-            </table>
-        </div>
-    </div>
+    <script>
+        // Carrega os dados ou inicia um objeto vazio
+        let ds = JSON.parse(localStorage.getItem('fin_v10_3')) || { P: [], R: [], saldoIni: 0 };
+        let editId = null;
 
-</div>
-
-<!-- Footer -->
-<div class="footer">
-    <p>&copy; 2026 Controle de Saldos - Todos os direitos reservados.</p>
-</div>
-
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-// Função para registrar os saldos diários
-let houseBalance = {};
-
-$('#balance-form').on('submit', function(e) {
-    e.preventDefault();
-
-    const date = $('#date').val();
-    const houses = $('#betting-houses input');
-
-    houses.each(function(index) {
-        const balance = parseFloat($(this).val());
-        const houseName = $(this).attr('id').replace('balance-', '');
-        
-        // Se for a primeira vez, inicializa o saldo
-        if (!houseBalance[houseName]) {
-            houseBalance[houseName] = [];
+        function moneyMask(i) {
+            let v = i.value.replace(/\D/g,'');
+            v = (v/100).toFixed(2) + '';
+            v = v.replace(".", ",");
+            v = v.replace(/(\d)(\d{3})(\d{3}),/g, "$1.$2.$3,");
+            v = v.replace(/(\d)(\d{3}),/g, "$1.$2,");
+            i.value = 'R$ ' + v;
         }
 
-        // Registra o saldo da casa no histórico
-        houseBalance[houseName].push({
-            date: date,
-            balance: balance
-        });
+        function parseMoney(val) {
+            if (!val) return 0;
+            return parseFloat(String(val).replace(/[R$\s.]/g, '').replace(',', '.')) || 0;
+        }
 
-        // Exibe os saldos registrados
-        const balanceRow = `<tr><td>#${houseBalance[houseName].length}</td><td>${date}</td><td>${houseName}</td><td>R$ ${balance.toFixed(2)}</td></tr>`;
-        $('#balance-history').append(balanceRow);
-    });
+        function updateSaldoIni() {
+            ds.saldoIni = parseMoney(document.getElementById('f_saldo_ini').value);
+            saveAndRef();
+        }
 
-    // Limpar o formulário
-    $('#balance-form')[0].reset();
-});
-</script>
+        function addItem(type) {
+            const d = document.getElementById('f_dia').value || "01";
+            const s = document.getElementById('f_desc').value;
+            const v = parseMoney(document.getElementById('f_valor').value);
 
+            if(!s || v === 0) return;
+
+            if(editId) {
+                ds.R = ds.R.filter(i => i.id !== editId);
+                ds.P = ds.P.filter(i => i.id !== editId);
+                editId = null;
+                document.getElementById('formTitle').innerText = "Novo Registro";
+            }
+
+            ds[type].push({ id: Date.now(), dia: parseInt(d), desc: s.toUpperCase(), valor: v, ok: false });
+            ds[type].sort((a,b) => a.dia - b.dia);
+            
+            saveAndRef();
+            document.getElementById('f_desc').value = '';
+            document.getElementById('f_valor').value = '';
+            document.getElementById('f_dia').value = '';
+        }
+
+        function toggleItem(type, id) {
+            const item = ds[type].find(i => i.id === id);
+            if(item) {
+                item.ok = !item.ok;
+                saveAndRef();
+            }
+        }
+
+        function prepareEdit(type, id) {
+            const item = ds[type].find(i => i.id === id);
+            if(!item) return;
+            editId = id;
+            document.getElementById('f_dia').value = item.dia;
+            document.getElementById('f_desc').value = item.desc;
+            document.getElementById('f_valor').value = 'R$ ' + item.valor.toLocaleString('pt-br', {minimumFractionDigits:2});
+            document.getElementById('formTitle').innerText = "EDITANDO REGISTRO";
+            document.getElementById('f_desc').focus();
+        }
+
+        function delItem(type, id) {
+            if(confirm("Excluir item?")) {
+                ds[type] = ds[type].filter(i => i.id !== id);
+                saveAndRef();
+            }
+        }
+
+        function limparTudo() {
+            if(confirm("Limpar todos os lançamentos?")) {
+                ds = { P: [], R: [], saldoIni: 0 };
+                document.getElementById('f_saldo_ini').value = '';
+                saveAndRef();
+            }
+        }
+
+        function saveAndRef() {
+            localStorage.setItem('fin_v10_3', JSON.stringify(ds));
+            renderAll();
+        }
+
+        function renderAll() {
+            const rPend = document.getElementById('listR_pendente');
+            const rConf = document.getElementById('listR_confirmado');
+            const pPend = document.getElementById('listP_pendente');
+            const pConf = document.getElementById('listP_confirmado');
+            
+            rPend.innerHTML = rConf.innerHTML = pPend.innerHTML = pConf.innerHTML = '';
+            let tR = 0, tP = 0, realR = 0, realP = 0;
+
+            const draw = (i, type) => {
+                const html = `
+                <div class="flex justify-between items-center p-2 bg-white border rounded shadow-sm ${i.ok ? 'item-confirmado' : 'cursor-edit border-gray-100'}">
+                    <div class="flex items-center gap-2 overflow-hidden">
+                        <input type="checkbox" ${i.ok ? 'checked' : ''} onchange="toggleItem('${type}', ${i.id})" class="w-4 h-4 shrink-0 cursor-pointer">
+                        <span class="text-[9px] font-black text-gray-400 bg-gray-50 px-1 border rounded">${String(i.dia).padStart(2,'0')}</span>
+                        <span onclick="prepareEdit('${type}', ${i.id})" class="text-[10px] font-black uppercase truncate text-slate-700 flex-1">${i.desc}</span>
+                    </div>
+                    <div class="flex items-center gap-1 shrink-0 ml-1">
+                        <span onclick="prepareEdit('${type}', ${i.id})" class="text-[10px] font-black font-mono ${type==='R'?'text-green-600':'text-red-600'}">R$ ${i.valor.toLocaleString('pt-br', {minimumFractionDigits:2})}</span>
+                        <button onclick="delItem('${type}', ${i.id})" class="text-gray-200 hover:text-red-500 px-1 text-xs no-print">✕</button>
+                    </div>
+                </div>`;
+                
+                if(type === 'R') {
+                    tR += i.valor;
+                    if(i.ok) { realR += i.valor; rConf.innerHTML += html; }
+                    else { rPend.innerHTML += html; }
+                } else {
+                    tP += i.valor;
+                    if(i.ok) { realP += i.valor; pConf.innerHTML += html; }
+                    else { pPend.innerHTML += html; }
+                }
+            };
+
+            ds.R.forEach(i => draw(i, 'R'));
+            ds.P.forEach(i => draw(i, 'P'));
+
+            document.getElementById('displayReceber').innerText = 'R$ ' + tR.toLocaleString('pt-br', {minimumFractionDigits:2});
+            document.getElementById('displayPagar').innerText = 'R$ ' + tP.toLocaleString('pt-br', {minimumFractionDigits:2});
+            const saldoFinal = (ds.saldoIni + tR) - tP;
+            document.getElementById('displaySaldo').innerText = 'R$ ' + saldoFinal.toLocaleString('pt-br', {minimumFractionDigits:2});
+            document.getElementById('boxSaldo').className = (saldoFinal >= 0 ? 'bg-slate-800' : 'bg-red-700') + ' p-4 rounded shadow text-white border-l-4 border-slate-500 font-bold';
+
+            document.getElementById('realRecebido').innerText = 'R$ ' + realR.toLocaleString('pt-br', {minimumFractionDigits:2});
+            document.getElementById('realPago').innerText = 'R$ ' + realP.toLocaleString('pt-br', {minimumFractionDigits:2});
+            const saldoReal = (ds.saldoIni + realR) - realP;
+            document.getElementById('realSaldo').innerText = 'R$ ' + saldoReal.toLocaleString('pt-br', {minimumFractionDigits:2});
+
+            if(ds.saldoIni > 0 && !document.activeElement.id.includes('f_saldo_ini')) {
+                document.getElementById('f_saldo_ini').value = 'R$ ' + ds.saldoIni.toLocaleString('pt-br', {minimumFractionDigits:2});
+            }
+        }
+        renderAll();
+    </script>
 </body>
 </html>
