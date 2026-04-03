@@ -89,7 +89,7 @@ function calcular(){
   document.getElementById('exibirLucro').innerText = fmt(total);
 }
 
-// --- Renderiza cards ---
+// --- Renderiza cards (CORRIGIDO) ---
 function render(){
   const el = document.getElementById('listaContas');
   el.innerHTML = '';
@@ -105,18 +105,22 @@ function render(){
       if(lucroBruto>0){
         const comissao = lucroBruto * (c.comissao/100);
         lucroVal = c.investimento + (lucroBruto - comissao);
-        lucroTexto = `${fmt(lucroVal)} (Comissão paga: ${fmt(comissao)})`;
+        lucroTexto = `${fmt(lucroVal)} (Comissão: ${fmt(comissao)})`;
       } else {
         lucroVal = c.saldo;
-        lucroTexto = fmt(lucroVal);
+        lucroTexto = `${fmt(lucroVal)} (Prejuízo: ${fmt(lucroBruto)})`;
       }
     } else if(c.dono==='gestao'){
       lucroVal = lucroBruto>0 ? lucroBruto*(c.comissao/100) : 0;
       lucroTexto = fmt(lucroVal);
     }
 
-    const lucroClass = lucroVal>=0?'text-green-500':'text-red-500';
+    // ✅ COR baseada no LUCRO FINAL
+    const lucroClass = lucroVal>=0 ? 'text-green-500' : 'text-red-500';
     const tipoCor = c.dono==='seu'?'text-green-600': c.dono==='sociedade'?'text-blue-600':'text-yellow-600';
+    
+    // ✅ COR do lucro bruto
+    const brutoClass = lucroBruto>=0 ? 'text-green-400' : 'text-red-400';
 
     const card = document.createElement('div');
     card.className = 'card-oled';
@@ -124,8 +128,11 @@ function render(){
     card.innerHTML = `
       <button class="absolute top-4 right-4 text-slate-300 hover:text-red-500" onclick="del(${c.id})">✕</button>
 
-      <!-- Lucro no topo -->
-      <p class="text-xl font-mono font-bold ${lucroClass} mb-2">Lucro: ${lucroTexto}</p>
+      <!-- ✅ SEU DINHEIRO (lucro final) -->
+      <p class="text-xl font-mono font-bold ${lucroClass} mb-1">Seu: ${lucroTexto}</p>
+      
+      <!-- ✅ LUCRO BRUTO TOTAL -->
+      <p class="text-sm font-mono ${brutoClass} mb-4">Bruto: ${fmt(lucroBruto)}</p>
 
       <!-- Campos editáveis -->
       <input value="${c.nome}" oninput="upd(${c.id},'nome',this.value)" class="w-full text-xs font-bold mb-2 uppercase ${tipoCor}" />
@@ -192,7 +199,7 @@ function maskSaldo(el, id){
     let v = el.value.replace(/[^\d.,]/g,'').replace(',', '.');
     let n = parseFloat(v);
     if(!isNaN(n)) c.saldo = n;
-    el.value = el.value; // não altera enquanto digita
+    el.value = el.value;
 }
 function formatSaldo(el,id){
     const c = db.contas.find(x=>x.id===id);
