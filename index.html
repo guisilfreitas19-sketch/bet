@@ -54,7 +54,7 @@ button { cursor:pointer; }
 
 <script>
 let db = {
-  contas: JSON.parse(localStorage.getItem('c_v300')) || [
+  contas: JSON.parse(localStorage.getItem('c_v301')) || [
     { id: 1, nome: 'BETANO EVERTON', saldo: 3400, investimento: 4000, comissao: 10, dono: 'sociedade' },
     { id: 2, nome: 'ESTRELA BET', saldo: 1050, investimento: 1000, comissao: 100, dono: 'seu' },
     { id: 3, nome: 'BETANO INGRID', saldo: 1500, investimento: 1000, comissao: 50, dono: 'gestao' }
@@ -71,17 +71,15 @@ function calcular(){
     let lucro = 0;
 
     if(c.dono==='seu'){
-      lucro = c.saldo; // todo saldo é seu
+      lucro = c.saldo;
     } else if(c.dono==='sociedade'){
-      // Dinheiro seu, paga comissão se lucro positivo
       if(lucroBruto>0){
         const comissao = lucroBruto * (c.comissao/100);
         lucro = c.investimento + (lucroBruto - comissao);
       } else {
-        lucro = c.saldo; // prejuízo é seu, sem comissão
+        lucro = c.saldo;
       }
     } else if(c.dono==='gestao'){
-      // Dinheiro de terceiros, você só ganha comissão
       lucro = lucroBruto>0 ? lucroBruto * (c.comissao/100) : 0;
     }
 
@@ -98,23 +96,23 @@ function render(){
 
   db.contas.forEach(c=>{
     const lucroBruto = c.saldo - c.investimento;
-    let lucroTexto='', lucroVal=0;
+    let lucroVal=0, lucroTexto='';
 
     if(c.dono==='seu'){
       lucroVal = c.saldo;
-      lucroTexto = `Lucro líquido: ${fmt(lucroVal)}`;
+      lucroTexto = fmt(lucroVal);
     } else if(c.dono==='sociedade'){
       if(lucroBruto>0){
         const comissao = lucroBruto * (c.comissao/100);
         lucroVal = c.investimento + (lucroBruto - comissao);
-        lucroTexto = `Lucro líquido: ${fmt(lucroVal)} (Comissão paga: ${fmt(comissao)})`;
+        lucroTexto = `${fmt(lucroVal)} (Comissão paga: ${fmt(comissao)})`;
       } else {
         lucroVal = c.saldo;
-        lucroTexto = `Lucro líquido: ${fmt(lucroVal)}`;
+        lucroTexto = fmt(lucroVal);
       }
     } else if(c.dono==='gestao'){
       lucroVal = lucroBruto>0 ? lucroBruto*(c.comissao/100) : 0;
-      lucroTexto = `Lucro líquido: ${fmt(lucroVal)}`;
+      lucroTexto = fmt(lucroVal);
     }
 
     const lucroClass = lucroVal>=0?'text-green-500':'text-red-500';
@@ -126,19 +124,33 @@ function render(){
     card.innerHTML = `
       <button class="absolute top-4 right-4 text-slate-300 hover:text-red-500" onclick="del(${c.id})">✕</button>
 
+      <!-- Lucro no topo -->
+      <p class="text-xl font-mono font-bold ${lucroClass} mb-2">Lucro: ${lucroTexto}</p>
+
+      <!-- Campos editáveis -->
       <input value="${c.nome}" oninput="upd(${c.id},'nome',this.value)" class="w-full text-xs font-bold mb-2 uppercase ${tipoCor}" />
 
+      <div class="flex justify-between text-[10px] text-slate-400 mb-1">
+        <label>Investimento: 
+          <input type="text" value="${fmt(c.investimento)}" oninput="maskInvest(this,${c.id})" class="w-24 border-b border-slate-300 text-slate-600 focus:ring-0 font-mono" />
+        </label>
+        <label>Saldo: 
+          <input type="text" value="${fmt(c.saldo)}" oninput="maskSaldo(this,${c.id})" class="w-24 border-b border-slate-300 text-slate-600 focus:ring-0 font-mono" />
+        </label>
+      </div>
+
       <div class="flex justify-between text-[10px] text-slate-400">
-        <span>Investimento: ${fmt(c.investimento)}</span>
-        <span>Saldo: ${fmt(c.saldo)}</span>
+        <label>Comissão: 
+          <input type="number" value="${c.comissao}" min="0" max="100" oninput="upd(${c.id},'comissao',this.value)" class="w-16 border-b border-slate-300 text-slate-600 focus:ring-0" />%
+        </label>
+        <label>Tipo: 
+          <select onchange="upd(${c.id},'dono',this.value)" class="border-b border-slate-300 text-slate-600 focus:ring-0">
+            <option value="seu" ${c.dono==='seu'?'selected':''}>Seu</option>
+            <option value="sociedade" ${c.dono==='sociedade'?'selected':''}>Sociedade</option>
+            <option value="gestao" ${c.dono==='gestao'?'selected':''}>Gestão</option>
+          </select>
+        </label>
       </div>
-
-      <div class="flex justify-between text-[10px] text-slate-400 mt-1">
-        <span>Comissão: ${c.comissao}%</span>
-        <span>Tipo: <span class="${tipoCor} font-bold">${c.dono.toUpperCase()}</span></span>
-      </div>
-
-      <p class="mt-3 text-sm font-mono font-bold ${lucroClass}">${lucroTexto}</p>
     `;
 
     el.appendChild(card);
@@ -147,7 +159,7 @@ function render(){
   calcular();
 }
 
-// --- Atualizações ---
+// --- Funções auxiliares ---
 function upd(id,campo,val){
   const c = db.contas.find(x=>x.id===id);
   if(!c) return;
@@ -163,8 +175,28 @@ function del(id){
 }
 
 function salvar(){
-  localStorage.setItem('c_v300', JSON.stringify(db.contas));
+  localStorage.setItem('c_v301', JSON.stringify(db.contas));
   calcular();
+}
+
+function maskSaldo(el,id){
+  let v = el.value.replace(/\D/g,'');
+  let n = parseFloat((v/100).toFixed(2))||0;
+  const c = db.contas.find(x=>x.id===id);
+  if(!c) return;
+  c.saldo = n;
+  el.value = fmt(n);
+  salvar(); render();
+}
+
+function maskInvest(el,id){
+  let v = el.value.replace(/\D/g,'');
+  let n = parseFloat((v/100).toFixed(2))||0;
+  const c = db.contas.find(x=>x.id===id);
+  if(!c) return;
+  c.investimento = n;
+  el.value = fmt(n);
+  salvar(); render();
 }
 
 // --- Nova conta ---
