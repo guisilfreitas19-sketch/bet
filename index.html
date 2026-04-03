@@ -2,15 +2,16 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Gestão Pro - V2.4 Performance</title>
+    <title>Gestão Pro - V2.5 Detalhada</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #f8fafc; color: #1e293b; font-family: 'Inter', sans-serif; }
         .card-light { background: white; border-radius: 2rem; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05); padding: 2rem; border: 1px solid #e2e8f0; }
         .header-glass { background: white; border-radius: 2.5rem; border: 1px solid #e2e8f0; position: sticky; top: 20px; z-index: 50; }
         input { background: #f1f5f9; border-radius: 0.75rem; padding: 0.6rem; outline: none; border: 1px solid #e2e8f0; width: 100%; font-family: monospace; font-weight: bold; }
-        input:focus { border-color: #3b82f6; background: white; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+        input:focus { border-color: #3b82f6; background: white; }
         .mini-label { font-size: 9px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; }
+        .badge-comissao { font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 6px; }
     </style>
 </head>
 <body class="p-6 md:p-12">
@@ -22,10 +23,10 @@
                     <p class="mini-label mb-2">Aporte Próprio</p>
                     <p id="exibirInvestimentoTotal" class="text-2xl font-mono font-bold text-slate-700">R$ 0,00</p>
                 </div>
-                <div class="lg:col-span-2 px-4">
+                <div class="lg:col-span-2 px-4 text-center lg:text-left">
                     <p class="mini-label mb-2">Lucro Real Líquido</p>
                     <p id="exibirLucro" class="text-5xl font-mono font-black tracking-tighter text-emerald-600">R$ 0,00</p>
-                    <div class="flex gap-4 mt-2">
+                    <div class="flex justify-center lg:justify-start gap-4 mt-2">
                         <div class="text-[10px] font-bold text-slate-500">🏦 Próprio: <span id="resumoProprio" class="text-emerald-600">R$ 0,00</span></div>
                         <div class="text-[10px] font-bold text-slate-500">🤝 Comissões: <span id="resumoComissoes" class="text-blue-600">R$ 0,00</span></div>
                     </div>
@@ -35,7 +36,7 @@
                     <p id="exibirSaque" class="text-2xl font-mono font-bold text-emerald-600">R$ 0,00</p>
                 </div>
                 <div class="lg:col-span-1 flex flex-col gap-2">
-                    <button onclick="addConta()" class="bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl text-[10px] font-black uppercase transition-all">＋ Nova Conta</button>
+                    <button onclick="addConta()" class="bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl text-[10px] font-black uppercase">＋ Nova Conta</button>
                 </div>
             </div>
         </div>
@@ -44,7 +45,7 @@
     </div>
 
     <script>
-        let db = JSON.parse(localStorage.getItem('c_v24')) || [
+        let db = JSON.parse(localStorage.getItem('c_v25')) || [
             { id: 1, nome: 'BETANO - EVERTON', inicial: 4000, saldo: 5000, comissao: 10, proprio: true },
             { id: 2, nome: 'ESTRELA - GUILHERME', inicial: 1000, saldo: 2000, comissao: 0, proprio: true },
             { id: 3, nome: 'BETANO - HINGRID', inicial: 1000, saldo: 2000, comissao: 50, proprio: false }
@@ -57,21 +58,29 @@
             
             db.forEach(c => {
                 const lucroBruto = c.saldo - c.inicial;
-                const comR$ = lucroBruto > 0 ? lucroBruto * (c.comissao / 100) : 0;
+                const valorComR$ = lucroBruto > 0 ? lucroBruto * (c.comissao / 100) : 0;
                 
-                // Atualiza o card sem renderizar tudo
+                // Elementos do Card
                 const resEl = document.getElementById(`res-${c.id}`);
                 const boxEl = document.getElementById(`box-${c.id}`);
+                const comEl = document.getElementById(`com-val-${c.id}`);
+                const comLabel = document.getElementById(`com-label-${c.id}`);
+
                 if(resEl) {
                     resEl.innerText = fmt(lucroBruto);
-                    boxEl.className = `mt-4 p-3 rounded-xl border ${lucroBruto >= 0 ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-red-50 text-red-500 border-red-100'}`;
+                    boxEl.className = `mt-4 p-4 rounded-xl border ${lucroBruto >= 0 ? 'bg-emerald-50 border-emerald-100 text-emerald-700' : 'bg-red-50 border-red-100 text-red-600'}`;
+                    
+                    // Atualiza o valor da comissão no card
+                    comEl.innerText = fmt(valorComR$);
+                    comLabel.innerText = c.proprio ? "Comissão a Pagar:" : "Sua Comissão:";
+                    comEl.className = `text-xs font-bold ${c.proprio ? 'text-red-500' : 'text-blue-600'}`;
                 }
 
                 if (c.proprio) {
                     aporte += c.inicial;
-                    lucroProprio += (lucroBruto - comR$);
+                    lucroProprio += (lucroBruto - valorComR$);
                 } else {
-                    comissoes += comR$;
+                    comissoes += valorComR$;
                 }
             });
 
@@ -83,14 +92,18 @@
             document.getElementById('resumoComissoes').innerText = fmt(comissoes);
             document.getElementById('exibirSaque').innerText = total > 0 ? fmt(total) : "R$ 0,00";
             
-            localStorage.setItem('c_v24', JSON.stringify(db));
+            localStorage.setItem('c_v25', JSON.stringify(db));
         }
 
         function updateField(id, field, value) {
             const conta = db.find(c => c.id === id);
-            if (field === 'proprio') conta[field] = value;
-            else conta[field] = parseFloat(value) || 0;
-            calcular();
+            if (field === 'proprio') {
+                conta[field] = value;
+                render(); // Re-renderiza para mudar os labels de "Pagar/Receber"
+            } else {
+                conta[field] = parseFloat(value) || 0;
+                calcular();
+            }
         }
 
         function addConta() {
@@ -99,7 +112,7 @@
         }
 
         function excluir(id) {
-            if(confirm("Remover?")) { db = db.filter(c => c.id !== id); render(); }
+            if(confirm("Remover conta?")) { db = db.filter(c => c.id !== id); render(); }
         }
 
         function render() {
@@ -110,6 +123,7 @@
                         <p class="text-[10px] font-black text-blue-600 uppercase tracking-tighter">${c.nome}</p>
                         <button class="text-slate-300 hover:text-red-500" onclick="excluir(${c.id})">✕</button>
                     </div>
+
                     <div class="grid grid-cols-2 gap-4 mb-4">
                         <div>
                             <p class="mini-label mb-1">Custo Inicial</p>
@@ -120,19 +134,27 @@
                             <input type="number" step="0.01" value="${c.saldo}" oninput="updateField(${c.id}, 'saldo', this.value)">
                         </div>
                     </div>
+
                     <div id="box-${c.id}">
-                         <p class="text-[9px] font-bold opacity-70 uppercase">Resultado da Banca</p>
-                         <p id="res-${c.id}" class="text-lg font-mono font-bold">R$ 0,00</p>
+                        <div class="flex justify-between items-center mb-1">
+                            <p class="text-[9px] font-bold opacity-70 uppercase tracking-tight">Resultado Bruto</p>
+                            <span id="com-label-${c.id}" class="text-[9px] font-black uppercase opacity-60"></span>
+                        </div>
+                        <div class="flex justify-between items-end">
+                            <p id="res-${c.id}" class="text-xl font-mono font-black">R$ 0,00</p>
+                            <p id="com-val-${c.id}" class="font-mono"></p>
+                        </div>
                     </div>
+
                     <div class="grid grid-cols-2 gap-4 border-t pt-5 mt-5">
                         <div>
                             <p class="mini-label text-blue-600 mb-1">Comissão %</p>
                             <input type="number" value="${c.comissao}" oninput="updateField(${c.id}, 'comissao', this.value)">
                         </div>
                         <label class="flex flex-col gap-1 cursor-pointer">
-                            <span class="mini-label">Origem</span>
+                            <span class="mini-label">Origem do Capital</span>
                             <div class="flex items-center gap-2">
-                                <input type="checkbox" ${c.proprio ? 'checked' : ''} onchange="updateField(${c.id}, 'proprio', this.checked)">
+                                <input type="checkbox" ${c.proprio ? 'checked' : ''} onchange="updateField(${c.id}, 'proprio', this.checked)" class="w-5 h-5 accent-blue-600">
                                 <span class="text-[9px] font-black text-slate-500 uppercase">${c.proprio ? 'Meu Bolso' : 'Terceiro'}</span>
                             </div>
                         </label>
