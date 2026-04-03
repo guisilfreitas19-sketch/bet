@@ -2,247 +2,229 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Financeiro Pro v10.3</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão Master OLED 2026</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background-color: #f1f5f9; font-family: sans-serif; overflow: hidden; height: 100vh; }
-        @media print { .no-print { display: none !important; } body { overflow: visible; height: auto; } }
-        .cursor-edit { cursor: pointer; transition: background 0.2s; }
-        .cursor-edit:hover { background-color: #f0f9ff; }
-        .item-confirmado { border-left: 4px solid #10b981; background-color: #f8fafc; opacity: 0.8; }
-        .custom-scroll::-webkit-scrollbar { width: 4px; }
-        .custom-scroll::-webkit-scrollbar-track { background: #f1f1f1; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        button { cursor: pointer !important; user-select: none; transition: all 0.1s; }
-        button:active { transform: scale(0.95); }
+        /* Estilo OLED - Preto Absoluto */
+        body { background-color: #000; color: #e5e7eb; font-family: 'Inter', sans-serif; transition: background-color 0.5s; overflow-x: hidden; }
+        .body-privado { background-color: #0c0d10 !important; }
+        
+        /* Cards Premium para Monitores/TVs */
+        .card-oled { background-color: #000; border: 1px solid #1a1a1a; border-radius: 2rem; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: relative; padding: 1.8rem; }
+        .card-oled:hover { border-color: #3b82f6; box-shadow: 0 10px 40px rgba(59, 130, 246, 0.15); transform: translateY(-4px); }
+        
+        /* Pulsação de Saque Disponível (Gold) */
+        @keyframes pulse-gold {
+            0% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.2); }
+            70% { box-shadow: 0 0 20px 10px rgba(251, 191, 36, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0); }
+        }
+        .saque-ativo { animation: pulse-gold 2s infinite; border-color: #fbbf24 !important; background: rgba(251, 191, 36, 0.02); }
+
+        /* Barras de Progresso Dinâmicas */
+        .barra-progresso { height: 3px; background: #0a0a0a; border-radius: 4px; overflow: hidden; margin-top: 15px; }
+        .progresso-fill { height: 100%; transition: width 1s cubic-bezier(0.4, 0, 0.2, 1); width: 0%; }
+        .barra-vazia { background-color: #222; }
+        .barra-ok { background: linear-gradient(90deg, #1e3a8a, #3b82f6); }
+        .barra-meta { background: linear-gradient(90deg, #b45309, #fbbf24); }
+
+        input { background: transparent; border-bottom: 2px solid #111; outline: none; width: 100%; transition: all 0.3s; font-family: monospace; }
+        input:focus { border-color: #3b82f6; color: #fff; }
+        
+        /* Sigilo Total */
+        .valor-privado { filter: blur(14px) grayscale(100%); pointer-events: none; opacity: 0.4; }
+        .borda-privada { border-top-color: #1f2937 !important; }
+        
+        ::-webkit-scrollbar { width: 0px; }
     </style>
 </head>
-<body class="p-4">
+<body class="p-6 md:p-12">
 
-    <div class="max-w-6xl mx-auto h-full flex flex-col gap-4">
-        
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 shrink-0 font-bold">
-            <div class="bg-white p-4 rounded shadow border-l-4 border-blue-400">
-                <p class="text-[10px] text-gray-400 uppercase">Saldo Inicial</p>
-                <input type="text" id="f_saldo_ini" oninput="moneyMask(this); updateSaldoIni()" placeholder="R$ 0,00" class="text-xl text-blue-600 bg-transparent outline-none w-full font-black">
-            </div>
-            <div class="bg-white p-4 rounded shadow border-l-4 border-green-500">
-                <p class="text-[10px] text-gray-400 uppercase">Total Entradas</p>
-                <h2 id="displayReceber" class="text-xl text-green-600 font-black font-mono">R$ 0,00</h2>
-            </div>
-            <div class="bg-white p-4 rounded shadow border-l-4 border-red-500">
-                <p class="text-[10px] text-gray-400 uppercase">Total Saídas</p>
-                <h2 id="displayPagar" class="text-xl text-red-600 font-black font-mono">R$ 0,00</h2>
-            </div>
-            <div id="boxSaldo" class="bg-slate-800 p-4 rounded shadow text-white border-l-4 border-slate-500">
-                <p class="text-[10px] uppercase opacity-70">Saldo Final Previsto</p>
-                <h2 id="displaySaldo" class="text-xl font-black font-mono">R$ 0,00</h2>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-2 shrink-0 bg-slate-800 p-2 rounded-lg shadow-inner">
-            <div class="flex items-center justify-between px-4 py-1 border-r border-slate-700">
-                <span class="text-[9px] font-black text-green-400 uppercase">RECEBIDO:</span>
-                <span id="realRecebido" class="text-sm font-bold text-white font-mono">R$ 0,00</span>
-            </div>
-            <div class="flex items-center justify-between px-4 py-1 border-r border-slate-700">
-                <span class="text-[9px] font-black text-red-400 uppercase">PAGO:</span>
-                <span id="realPago" class="text-sm font-bold text-white font-mono">R$ 0,00</span>
-            </div>
-            <div class="flex items-center justify-between px-4 py-1">
-                <span class="text-[9px] font-black text-blue-300 uppercase italic">SALDO EM MÃO:</span>
-                <span id="realSaldo" class="text-sm font-bold text-white font-mono">R$ 0,00</span>
-            </div>
-        </div>
-
-        <div class="flex-1 grid grid-cols-1 md:grid-cols-12 gap-4 min-h-0">
-            <div class="md:col-span-3 bg-white p-4 rounded shadow space-y-4 no-print border-t-4 border-blue-500 flex flex-col">
-                <div class="flex justify-between items-center border-b pb-2 mb-2 text-[10px] font-black text-blue-900 uppercase">
-                    <span>Financeiro App</span>
-                    <span class="bg-blue-100 px-2 rounded-full text-blue-600">v10.3</span>
-                </div>
-
-                <h2 id="formTitle" class="font-bold text-blue-600 text-[10px] uppercase tracking-widest">Novo Registro</h2>
+    <div class="max-w-7xl mx-auto">
+        <div id="headerDinamico" class="bg-black border border-gray-900 rounded-[2.5rem] p-10 mb-12 border-t-4 transition-all shadow-2xl relative">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-10 items-center">
                 
-                <div class="flex flex-col gap-3">
-                    <div class="flex gap-2 w-full">
-                        <input type="number" id="f_dia" placeholder="DIA" class="w-12 border p-2 rounded font-black text-center bg-gray-50 uppercase text-xs outline-blue-300">
-                        <input type="text" id="f_desc" placeholder="DESCRIÇÃO" class="flex-1 min-w-0 border p-2 rounded uppercase text-xs font-bold bg-gray-50 outline-blue-300">
+                <div class="lg:col-span-1 pr-4">
+                    <p class="text-[10px] font-black text-gray-600 uppercase tracking-[0.2em] mb-2">Banca Inicial</p>
+                    <input type="text" id="campoBancaBase" class="text-2xl font-bold text-blue-500 tracking-tighter">
+                </div>
+
+                <div class="lg:col-span-2 flex items-center gap-6">
+                    <div>
+                        <p class="text-[10px] font-black text-gray-600 uppercase tracking-[0.2em] mb-2">Lucro do Mês</p>
+                        <p id="exibirLucro" class="text-5xl font-mono font-bold tracking-tighter transition-all">R$ 0,00</p>
                     </div>
-                    
-                    <input type="text" id="f_valor" oninput="moneyMask(this)" placeholder="R$ 0,00" class="w-full border p-3 rounded font-mono font-bold text-xl text-blue-700 bg-gray-50 outline-blue-300">
-                    
-                    <div class="flex gap-2">
-                        <button type="button" onclick="addItem('R')" class="flex-1 bg-green-500 text-white font-black py-4 rounded hover:bg-green-600 shadow uppercase text-[10px]">Receber</button>
-                        <button type="button" onclick="addItem('P')" class="flex-1 bg-red-500 text-white font-black py-4 rounded hover:bg-red-600 shadow uppercase text-[10px]">Pagar</button>
+                    <div class="flex flex-col items-center border border-gray-800 px-4 py-2 rounded-2xl bg-zinc-950/50">
+                        <span id="emojiSaude" class="text-3xl mb-1">⚖️</span>
+                        <span id="txtStatus" class="text-[9px] font-black uppercase tracking-tighter text-gray-600">--</span>
                     </div>
                 </div>
 
-                <div class="mt-auto pt-4 border-t flex gap-2">
-                    <button onclick="window.print()" class="flex-1 border py-2 rounded font-bold text-[9px] uppercase text-gray-400 hover:bg-gray-100">PDF</button>
-                    <button onclick="limparTudo()" class="flex-1 border py-2 rounded font-bold text-[9px] uppercase text-red-200 hover:bg-red-50">Reset</button>
+                <div id="containerSaque" class="lg:col-span-1 border border-gray-900 p-5 rounded-[1.5rem] transition-all opacity-20">
+                    <p class="text-[9px] font-black text-yellow-600 uppercase tracking-widest mb-1 italic font-bold">Total p/ Saque</p>
+                    <p id="exibirSaqueTotal" class="text-2xl font-mono font-bold text-yellow-500 tracking-tighter">R$ 0,00</p>
+                </div>
+
+                <div class="lg:col-span-2 flex flex-col gap-3">
+                    <button id="btnNovoCard" class="bg-blue-700 hover:bg-blue-600 text-white py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] active:scale-95 transition-all">＋ Adicionar Conta</button>
+                    <div class="flex gap-3">
+                        <button id="btnPrivacidade" class="flex-1 bg-zinc-900 border border-zinc-800 text-gray-400 py-3 rounded-2xl text-[10px] font-bold uppercase">👁️ Privacidade</button>
+                        <button id="btnReset" class="flex-1 bg-red-950/30 border border-red-900/50 text-red-500 py-3 rounded-2xl text-[10px] font-bold uppercase hover:bg-red-900/40 transition-all">Realizar Saque</button>
+                    </div>
                 </div>
             </div>
+        </div>
 
-            <div class="md:col-span-9 grid grid-cols-1 md:grid-cols-2 gap-4 h-full min-h-0 overflow-hidden font-bold">
-                <div class="flex flex-col gap-2 h-full min-h-0">
-                    <div class="bg-green-600 p-1 text-white text-[10px] uppercase text-center rounded shrink-0">Entradas (A Confirmar)</div>
-                    <div id="listR_pendente" class="flex-1 bg-white rounded shadow-sm overflow-y-auto p-2 space-y-1 custom-scroll"></div>
-                    
-                    <div class="bg-slate-500 p-1 text-white text-[10px] uppercase text-center rounded shrink-0">Entradas (Confirmadas)</div>
-                    <div id="listR_confirmado" class="flex-1 bg-slate-100 rounded shadow-sm overflow-y-auto p-2 space-y-1 border-2 border-dashed border-slate-200 custom-scroll"></div>
-                </div>
+        <div id="listaContas" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8"></div>
 
-                <div class="flex flex-col gap-2 h-full min-h-0">
-                    <div class="bg-red-600 p-1 text-white text-[10px] uppercase text-center rounded shrink-0">Saídas (A Confirmar)</div>
-                    <div id="listP_pendente" class="flex-1 bg-white rounded shadow-sm overflow-y-auto p-2 space-y-1 custom-scroll"></div>
-                    
-                    <div class="bg-slate-500 p-1 text-white text-[10px] uppercase text-center rounded shrink-0">Saídas (Confirmadas)</div>
-                    <div id="listP_confirmado" class="flex-1 bg-slate-100 rounded shadow-sm overflow-y-auto p-2 space-y-1 border-2 border-dashed border-slate-200 custom-scroll"></div>
-                </div>
+        <div class="mt-20 text-center border-t border-gray-900 pt-8 opacity-30 hover:opacity-100 transition-all">
+            <div class="inline-block bg-zinc-950 px-6 py-2 rounded-full border border-gray-900">
+                <p class="text-[10px] font-black text-gray-700 uppercase tracking-[0.3em] mb-1 text-blue-900">Último Lucro Sacado</p>
+                <p id="exibirMemoria" class="text-sm font-mono text-gray-500 tracking-widest">Aguardando fechamento...</p>
             </div>
         </div>
     </div>
 
     <script>
-        // Carrega os dados ou inicia um objeto vazio
-        let ds = JSON.parse(localStorage.getItem('fin_v10_3')) || { P: [], R: [], saldoIni: 0 };
-        let editId = null;
+        // Banco de Dados v106 (Estável)
+        let db = {
+            banca: parseFloat(localStorage.getItem('b_v106')) || 5000,
+            contas: JSON.parse(localStorage.getItem('c_v106')) || [{ id: Date.now(), nome: 'BETANO - EVERTON', saldo: 0 }],
+            memoria: localStorage.getItem('m_v106') || "Nenhum saque registrado",
+            privacidade: false
+        };
 
-        function moneyMask(i) {
-            let v = i.value.replace(/\D/g,'');
-            v = (v/100).toFixed(2) + '';
-            v = v.replace(".", ",");
-            v = v.replace(/(\d)(\d{3})(\d{3}),/g, "$1.$2.$3,");
-            v = v.replace(/(\d)(\d{3}),/g, "$1.$2,");
-            i.value = 'R$ ' + v;
+        const fmt = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+        function salvar() {
+            localStorage.setItem('b_v106', db.banca);
+            localStorage.setItem('c_v106', JSON.stringify(db.contas));
+            localStorage.setItem('m_v106', db.memoria);
+            calcular();
         }
 
-        function parseMoney(val) {
-            if (!val) return 0;
-            return parseFloat(String(val).replace(/[R$\s.]/g, '').replace(',', '.')) || 0;
-        }
+        function calcular() {
+            const soma = db.contas.reduce((acc, c) => acc + c.saldo, 0);
+            const lucro = soma - db.banca;
+            const pct = db.banca > 0 ? (lucro / db.banca) * 100 : 0;
 
-        function updateSaldoIni() {
-            ds.saldoIni = parseMoney(document.getElementById('f_saldo_ini').value);
-            saveAndRef();
-        }
-
-        function addItem(type) {
-            const d = document.getElementById('f_dia').value || "01";
-            const s = document.getElementById('f_desc').value;
-            const v = parseMoney(document.getElementById('f_valor').value);
-
-            if(!s || v === 0) return;
-
-            if(editId) {
-                ds.R = ds.R.filter(i => i.id !== editId);
-                ds.P = ds.P.filter(i => i.id !== editId);
-                editId = null;
-                document.getElementById('formTitle').innerText = "Novo Registro";
-            }
-
-            ds[type].push({ id: Date.now(), dia: parseInt(d), desc: s.toUpperCase(), valor: v, ok: false });
-            ds[type].sort((a,b) => a.dia - b.dia);
+            const elLucro = document.getElementById('exibirLucro');
+            const elSaque = document.getElementById('exibirSaqueTotal');
+            const elHeader = document.getElementById('headerDinamico');
+            const boxSaque = document.getElementById('containerSaque');
             
-            saveAndRef();
-            document.getElementById('f_desc').value = '';
-            document.getElementById('f_valor').value = '';
-            document.getElementById('f_dia').value = '';
-        }
-
-        function toggleItem(type, id) {
-            const item = ds[type].find(i => i.id === id);
-            if(item) {
-                item.ok = !item.ok;
-                saveAndRef();
-            }
-        }
-
-        function prepareEdit(type, id) {
-            const item = ds[type].find(i => i.id === id);
-            if(!item) return;
-            editId = id;
-            document.getElementById('f_dia').value = item.dia;
-            document.getElementById('f_desc').value = item.desc;
-            document.getElementById('f_valor').value = 'R$ ' + item.valor.toLocaleString('pt-br', {minimumFractionDigits:2});
-            document.getElementById('formTitle').innerText = "EDITANDO REGISTRO";
-            document.getElementById('f_desc').focus();
-        }
-
-        function delItem(type, id) {
-            if(confirm("Excluir item?")) {
-                ds[type] = ds[type].filter(i => i.id !== id);
-                saveAndRef();
-            }
-        }
-
-        function limparTudo() {
-            if(confirm("Limpar todos os lançamentos?")) {
-                ds = { P: [], R: [], saldoIni: 0 };
-                document.getElementById('f_saldo_ini').value = '';
-                saveAndRef();
-            }
-        }
-
-        function saveAndRef() {
-            localStorage.setItem('fin_v10_3', JSON.stringify(ds));
-            renderAll();
-        }
-
-        function renderAll() {
-            const rPend = document.getElementById('listR_pendente');
-            const rConf = document.getElementById('listR_confirmado');
-            const pPend = document.getElementById('listP_pendente');
-            const pConf = document.getElementById('listP_confirmado');
+            elLucro.innerText = fmt(lucro);
             
-            rPend.innerHTML = rConf.innerHTML = pPend.innerHTML = pConf.innerHTML = '';
-            let tR = 0, tP = 0, realR = 0, realP = 0;
-
-            const draw = (i, type) => {
-                const html = `
-                <div class="flex justify-between items-center p-2 bg-white border rounded shadow-sm ${i.ok ? 'item-confirmado' : 'cursor-edit border-gray-100'}">
-                    <div class="flex items-center gap-2 overflow-hidden">
-                        <input type="checkbox" ${i.ok ? 'checked' : ''} onchange="toggleItem('${type}', ${i.id})" class="w-4 h-4 shrink-0 cursor-pointer">
-                        <span class="text-[9px] font-black text-gray-400 bg-gray-50 px-1 border rounded">${String(i.dia).padStart(2,'0')}</span>
-                        <span onclick="prepareEdit('${type}', ${i.id})" class="text-[10px] font-black uppercase truncate text-slate-700 flex-1">${i.desc}</span>
-                    </div>
-                    <div class="flex items-center gap-1 shrink-0 ml-1">
-                        <span onclick="prepareEdit('${type}', ${i.id})" class="text-[10px] font-black font-mono ${type==='R'?'text-green-600':'text-red-600'}">R$ ${i.valor.toLocaleString('pt-br', {minimumFractionDigits:2})}</span>
-                        <button onclick="delItem('${type}', ${i.id})" class="text-gray-200 hover:text-red-500 px-1 text-xs no-print">✕</button>
-                    </div>
-                </div>`;
+            if (db.privacidade) {
+                elLucro.className = "text-5xl font-mono font-bold tracking-tighter valor-privado";
+                elHeader.classList.add('borda-privada');
+                document.body.classList.add('body-privado');
+                boxSaque.classList.remove('saque-ativo');
+                boxSaque.style.opacity = "0.1";
+            } else {
+                document.body.classList.remove('body-privado');
+                elHeader.classList.remove('borda-privada');
                 
-                if(type === 'R') {
-                    tR += i.valor;
-                    if(i.ok) { realR += i.valor; rConf.innerHTML += html; }
-                    else { rPend.innerHTML += html; }
+                let cor, emoji, status;
+                if (pct > 25) { cor = "text-green-400"; emoji = "🔥"; status = "Excelente"; }
+                else if (pct > 0) { cor = "text-green-500"; emoji = "📈"; status = "Em Lucro"; }
+                else if (pct >= -10) { cor = "text-gray-500"; emoji = "⚖️"; status = "Estável"; }
+                else { cor = "text-red-600"; emoji = "⚠️"; status = "Alerta"; }
+                
+                elLucro.className = `text-5xl font-mono font-bold tracking-tighter ${cor}`;
+                elHeader.style.borderTopColor = lucro >= 0 ? "#16a34a" : "#991b1b";
+                document.getElementById('emojiSaude').innerText = emoji;
+                document.getElementById('txtStatus').innerText = status;
+                document.getElementById('txtStatus').className = `text-[9px] font-black uppercase tracking-tighter ${cor}`;
+                
+                if (lucro > 0) {
+                    elSaque.innerText = fmt(lucro);
+                    boxSaque.classList.add('saque-ativo');
+                    boxSaque.style.opacity = "1";
                 } else {
-                    tP += i.valor;
-                    if(i.ok) { realP += i.valor; pConf.innerHTML += html; }
-                    else { pPend.innerHTML += html; }
+                    elSaque.innerText = "R$ 0,00";
+                    boxSaque.classList.remove('saque-ativo');
+                    boxSaque.style.opacity = "0.2";
                 }
-            };
-
-            ds.R.forEach(i => draw(i, 'R'));
-            ds.P.forEach(i => draw(i, 'P'));
-
-            document.getElementById('displayReceber').innerText = 'R$ ' + tR.toLocaleString('pt-br', {minimumFractionDigits:2});
-            document.getElementById('displayPagar').innerText = 'R$ ' + tP.toLocaleString('pt-br', {minimumFractionDigits:2});
-            const saldoFinal = (ds.saldoIni + tR) - tP;
-            document.getElementById('displaySaldo').innerText = 'R$ ' + saldoFinal.toLocaleString('pt-br', {minimumFractionDigits:2});
-            document.getElementById('boxSaldo').className = (saldoFinal >= 0 ? 'bg-slate-800' : 'bg-red-700') + ' p-4 rounded shadow text-white border-l-4 border-slate-500 font-bold';
-
-            document.getElementById('realRecebido').innerText = 'R$ ' + realR.toLocaleString('pt-br', {minimumFractionDigits:2});
-            document.getElementById('realPago').innerText = 'R$ ' + realP.toLocaleString('pt-br', {minimumFractionDigits:2});
-            const saldoReal = (ds.saldoIni + realR) - realP;
-            document.getElementById('realSaldo').innerText = 'R$ ' + saldoReal.toLocaleString('pt-br', {minimumFractionDigits:2});
-
-            if(ds.saldoIni > 0 && !document.activeElement.id.includes('f_saldo_ini')) {
-                document.getElementById('f_saldo_ini').value = 'R$ ' + ds.saldoIni.toLocaleString('pt-br', {minimumFractionDigits:2});
             }
+            atualizarBarras();
         }
-        renderAll();
+
+        function atualizarBarras() {
+            db.contas.forEach(c => {
+                const f = document.getElementById('fill-' + c.id);
+                if (f) {
+                    const p = db.banca > 0 ? (c.saldo / db.banca) * 100 : 0;
+                    f.style.width = Math.min(p, 100) + '%';
+                    f.className = 'progresso-fill ' + (c.saldo === 0 ? 'barra-vazia' : c.saldo >= db.banca ? 'barra-meta' : 'barra-ok');
+                }
+            });
+        }
+
+        function render() {
+            const container = document.getElementById('listaContas');
+            container.innerHTML = '';
+            db.contas.forEach(c => {
+                const div = document.createElement('div');
+                div.className = 'card-oled';
+                div.innerHTML = `
+                    <button class="absolute top-6 right-6 text-gray-800 hover:text-red-600 transition-colors" onclick="apiExcluir(${c.id})">✕</button>
+                    <p class="text-[10px] text-blue-800 font-black uppercase tracking-[0.2em] mb-5 italic cursor-pointer hover:text-blue-500" onclick="apiRenomear(${c.id})">${c.nome} ✏️</p>
+                    <input type="text" value="${fmt(c.saldo)}" oninput="apiMascara(this, ${c.id})" onfocus="this.select()" class="${db.privacidade ? 'valor-privado' : ''} text-3xl text-white pb-3 font-mono font-bold">
+                    <div class="barra-progresso"><div class="progresso-fill" id="fill-${c.id}"></div></div>
+                `;
+                container.appendChild(div);
+            });
+            calcular();
+        }
+
+        window.apiMascara = (el, id) => {
+            let v = el.value.replace(/\D/g, '');
+            let n = parseFloat((v / 100).toFixed(2)) || 0;
+            if(id === 'BANCA') db.banca = n;
+            else {
+                const item = db.contas.find(x => x.id === id);
+                if(item) item.saldo = n;
+            }
+            el.value = fmt(n);
+            salvar();
+        };
+
+        window.apiRenomear = (id) => {
+            let n = prompt("Nome da Conta:");
+            if(n) { db.contas.find(x => x.id === id).nome = n.toUpperCase(); salvar(); render(); }
+        };
+
+        window.apiExcluir = (id) => {
+            if(confirm("Deseja remover esta banca?")) { db.contas = db.contas.filter(x => x.id !== id); salvar(); render(); }
+        };
+
+        document.getElementById('btnNovoCard').addEventListener('click', () => {
+            const nova = { id: Date.now(), nome: 'NOVA BANCA', saldo: 0 };
+            db.contas.push(nova);
+            salvar(); render();
+        });
+
+        document.getElementById('btnPrivacidade').onclick = () => { db.privacidade = !db.privacidade; render(); };
+
+        document.getElementById('btnReset').onclick = () => {
+            const lucroFinal = db.contas.reduce((a,b)=>a+b.saldo,0) - db.banca;
+            if(confirm(`REALIZAR SAQUE DE ${fmt(lucroFinal)} E REINICIAR CICLO?`)){
+                db.memoria = `${fmt(lucroFinal)} em ${new Date().toLocaleDateString('pt-BR')}`;
+                db.contas.forEach(c => c.saldo = 0);
+                document.getElementById('exibirMemoria').innerText = db.memoria;
+                salvar(); render();
+            }
+        };
+
+        document.getElementById('campoBancaBase').oninput = function() { apiMascara(this, 'BANCA'); };
+
+        // Start
+        document.getElementById('campoBancaBase').value = fmt(db.banca);
+        document.getElementById('exibirMemoria').innerText = db.memoria;
+        render();
+
     </script>
 </body>
 </html>
