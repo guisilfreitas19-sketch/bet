@@ -5,18 +5,20 @@
 <title>Bet Dashboard - Gestão de Capital v1.3</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet" />
+
 <style>
 body { background-color: #f8fafc; color: #1e293b; font-family: 'Inter', sans-serif; }
 .card-oled { 
-    background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 2rem; 
-    padding: 1.5rem; box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+    background:#fff; border:1px solid #e2e8f0; border-radius:2rem;
+    padding:1.5rem; box-shadow:0 4px 15px rgba(0,0,0,0.02);
 }
-.card-oled:hover { border-color: #3b82f6; transform: translateY(-4px); }
-input { border-bottom: 1px solid #e2e8f0; outline: none; }
-.valor-privado { filter: blur(14px); opacity: 0.2; }
+.card-oled:hover { border-color:#3b82f6; transform:translateY(-4px); }
 
-.legenda { font-size: 0.9rem; display: flex; gap: 1.5rem; flex-wrap: wrap; }
-.legenda div { width: 20px; height: 20px; border-radius: 4px; }
+input { border-bottom:1px solid #e2e8f0; outline:none; }
+.valor-privado { filter: blur(14px); opacity:0.2; }
+
+.legenda { font-size:0.9rem; display:flex; gap:1.5rem; flex-wrap:wrap; }
+.legenda div { width:20px; height:20px; border-radius:4px; }
 .cor-seu { background:#059669; }
 .cor-sociedade { background:#2563eb; }
 .cor-gestao { background:#f59e0b; }
@@ -32,12 +34,12 @@ input { border-bottom: 1px solid #e2e8f0; outline: none; }
 <p id="exibirLucro" class="text-4xl font-bold text-emerald-500">R$ 0,00</p>
 
 <div class="legenda mt-4">
-<span><div class="cor-seu"></div> SEU: dinheiro seu, recebe investimento + % do lucro</span>
+<span><div class="cor-seu"></div> SEU: dinheiro seu, você fica com 100% do resultado</span>
 <span><div class="cor-sociedade"></div> SOCIEDADE: dinheiro é seu, mas você paga % do lucro ao dono da conta</span>
 <span><div class="cor-gestao"></div> GESTÃO: dinheiro de terceiros, você ganha % do lucro</span>
 </div>
 
-<button id="btnNovoCard" class="mt-4 bg-black text-white px-4 py-2 rounded-xl">Nova Conta</button>
+<button id="btnNovoCard" class="mt-4 bg-black text-white px-4 py-2 rounded-xl">＋ Nova Conta</button>
 </div>
 
 <div id="listaContas" class="grid md:grid-cols-3 gap-6"></div>
@@ -46,8 +48,12 @@ input { border-bottom: 1px solid #e2e8f0; outline: none; }
 
 <script>
 let db = {
-contas: JSON.parse(localStorage.getItem('c_v105')) || [],
-privacidade: false
+contas: JSON.parse(localStorage.getItem('c_v105')) || [
+{ id:1, nome:'BETANO EVERTON', saldo:3400, investimento:4000, comissao:10, dono:'sociedade' },
+{ id:2, nome:'ESTRELA BET', saldo:1050, investimento:1000, comissao:100, dono:'seu' },
+{ id:3, nome:'BETANO INGRID', saldo:1000, investimento:1000, comissao:50, dono:'gestao' }
+],
+privacidade:false
 };
 
 const fmt = v => v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
@@ -62,20 +68,28 @@ let total = 0;
 
 db.contas.forEach(c=>{
 const lucroBruto = c.saldo - c.investimento;
+let resultado = 0;
 
 if(c.dono === 'seu'){
-const lucro = lucroBruto * (c.comissao/100);
-total += c.investimento + lucro;
+resultado = c.saldo;
 
 }else if(c.dono === 'sociedade'){
-const comissaoPaga = lucroBruto * (c.comissao/100);
-const lucroLiquido = lucroBruto - comissaoPaga;
-total += c.investimento + lucroLiquido;
+if(lucroBruto > 0){
+const comissao = lucroBruto * (c.comissao/100);
+resultado = c.investimento + (lucroBruto - comissao);
+}else{
+resultado = c.saldo;
+}
 
 }else if(c.dono === 'gestao'){
-const lucro = lucroBruto * (c.comissao/100);
-total += lucro;
+if(lucroBruto > 0){
+resultado = lucroBruto * (c.comissao/100);
+}else{
+resultado = 0;
 }
+}
+
+total += resultado;
 });
 
 document.getElementById('exibirLucro').innerText = fmt(total);
@@ -90,17 +104,17 @@ const lucro = c.saldo - c.investimento;
 
 el.innerHTML += `
 <div class="card-oled">
-<button onclick="del(${c.id})">X</button>
+<button onclick="del(${c.id})">✕</button>
 
 <input value="${c.nome}" oninput="upd(${c.id},'nome',this.value)" />
 
-<p>Invest</p>
+<p>Investimento</p>
 <input value="${fmt(c.investimento)}" oninput="money(this,${c.id},'investimento')" />
 
 <p>Saldo</p>
 <input value="${fmt(c.saldo)}" oninput="money(this,${c.id},'saldo')" />
 
-<p>Comissão</p>
+<p>Comissão (%)</p>
 <input type="number" value="${c.comissao}" oninput="upd(${c.id},'comissao',this.value)" />
 
 <p>Tipo</p>
@@ -110,7 +124,9 @@ el.innerHTML += `
 <option value="gestao" ${c.dono==='gestao'?'selected':''}>Gestão</option>
 </select>
 
-<p>Lucro: ${fmt(lucro)}</p>
+<p class="${lucro>=0?'text-green-500':'text-red-500'}">
+Lucro da conta: ${fmt(lucro)}
+</p>
 </div>
 `;
 });
