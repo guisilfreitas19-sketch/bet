@@ -2,7 +2,7 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Gestão de Comissões 2026</title>
+    <title>Gestão Pro - Investimento Automático</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #f8fafc; color: #1e293b; font-family: 'Inter', sans-serif; }
@@ -17,16 +17,17 @@
 <body class="p-6 md:p-12">
 
     <div class="max-w-7xl mx-auto">
-        <div class="header-glass p-8 mb-12 shadow-sm border-t-4 border-blue-600">
+        <div class="header-glass p-8 mb-12 shadow-sm border-t-4 border-emerald-500">
             <div class="grid grid-cols-1 lg:grid-cols-5 gap-8 items-center">
                 
                 <div class="lg:col-span-1 border-r border-slate-100 pr-6">
-                    <p class="mini-label mb-2">Meu Investimento</p>
-                    <input type="text" id="campoBancaBase" class="text-xl text-blue-600">
+                    <p class="mini-label mb-2">Meu Aporte Total</p>
+                    <p id="exibirInvestimentoTotal" class="text-2xl font-mono font-bold text-slate-700">R$ 0,00</p>
+                    <p class="text-[8px] text-slate-400 uppercase font-bold mt-1">Soma das Bancas Próprias</p>
                 </div>
 
                 <div class="lg:col-span-2 px-4">
-                    <p class="mini-label mb-2">Lucro Real Líquido (Seu Bolso)</p>
+                    <p class="mini-label mb-2">Lucro Real Líquido</p>
                     <p id="exibirLucro" class="text-5xl font-mono font-black tracking-tighter text-emerald-600">R$ 0,00</p>
                     <div class="flex gap-4 mt-2">
                         <div class="text-[10px] font-bold text-slate-500">🏦 Próprio: <span id="resumoProprio" class="text-emerald-600">R$ 0,00</span></div>
@@ -51,8 +52,7 @@
 
     <script>
         let db = {
-            meuInvestimento: parseFloat(localStorage.getItem('b_v21')) || 5000,
-            contas: JSON.parse(localStorage.getItem('c_v21')) || [
+            contas: JSON.parse(localStorage.getItem('c_v22')) || [
                 { id: 1, nome: 'BETANO - EVERTON', inicial: 4000, saldo: 3300, comissao: 10, proprio: true },
                 { id: 2, nome: 'ESTRELA - GUILHERME', inicial: 1000, saldo: 1050, comissao: 0, proprio: true },
                 { id: 3, nome: 'BETANO - HINGRID', inicial: 1000, saldo: 980, comissao: 50, proprio: false }
@@ -63,6 +63,7 @@
         const fmt = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
         function calcular() {
+            let aporteTotal = 0;
             let lucroProprioTotal = 0;
             let comissoesReceberTotal = 0;
             
@@ -70,24 +71,21 @@
                 let lucroBrutoConta = c.saldo - c.inicial;
                 let valorComissao = 0;
 
-                // Regra: Comissão só existe se houver lucro acima do inicial da conta
                 if (lucroBrutoConta > 0) {
                     valorComissao = lucroBrutoConta * (c.comissao / 100);
                 }
 
                 if (c.proprio) {
-                    // Se a banca é sua, o lucro é o bruto menos a comissão que você paga (se houver parceiro)
+                    aporteTotal += c.inicial; // Soma automática do investimento
                     lucroProprioTotal += (lucroBrutoConta - valorComissao);
                 } else {
-                    // Se a banca é de terceiros, seu lucro é apenas a sua comissão (ex: Hingrid)
                     comissoesReceberTotal += valorComissao;
                 }
             });
 
-            // O Lucro Real Líquido é a soma do lucro das suas bancas + o que você ganhou de comissão
             let lucroFinal = lucroProprioTotal + comissoesReceberTotal;
 
-            // Atualização do Painel
+            document.getElementById('exibirInvestimentoTotal').innerText = fmt(aporteTotal);
             const elLucro = document.getElementById('exibirLucro');
             elLucro.innerText = fmt(lucroFinal);
             elLucro.className = `text-5xl font-mono font-black tracking-tighter ${lucroFinal >= 0 ? 'text-emerald-600' : 'text-red-500'}`;
@@ -96,8 +94,7 @@
             document.getElementById('resumoComissoes').innerText = fmt(comissoesReceberTotal);
             document.getElementById('exibirSaque').innerText = lucroFinal > 0 ? fmt(lucroFinal) : "R$ 0,00";
             
-            localStorage.setItem('b_v21', db.meuInvestimento);
-            localStorage.setItem('c_v21', JSON.stringify(db.contas));
+            localStorage.setItem('c_v22', JSON.stringify(db.contas));
         }
 
         function render() {
@@ -115,7 +112,7 @@
                     
                     <div class="grid grid-cols-2 gap-4 mb-4">
                         <div>
-                            <p class="mini-label mb-1">Início (Base)</p>
+                            <p class="mini-label mb-1">Custo Inicial</p>
                             <input type="text" value="${fmt(c.inicial)}" oninput="mascara(this, ${c.id}, 'inicial')">
                         </div>
                         <div>
@@ -125,7 +122,7 @@
                     </div>
 
                     <div class="mt-4 p-3 rounded-xl ${lucroConta >= 0 ? 'bg-emerald-50' : 'bg-red-50'} border border-slate-50">
-                         <p class="text-[9px] font-bold text-slate-400 uppercase">Resultado da Conta</p>
+                         <p class="text-[9px] font-bold text-slate-400 uppercase">Resultado da Banca</p>
                          <p class="text-lg font-mono font-bold ${lucroConta >= 0 ? 'text-emerald-600' : 'text-red-500'}">
                             ${fmt(lucroConta)}
                          </p>
@@ -137,10 +134,10 @@
                             <input type="number" value="${c.comissao}" oninput="updateVal(${c.id}, 'comissao', this.value)" class="w-20 text-sm">
                         </div>
                         <label class="flex flex-col gap-1 cursor-pointer">
-                            <span class="mini-label">Tipo de Banca</span>
+                            <span class="mini-label">Origem do Capital</span>
                             <div class="flex items-center gap-2">
                                 <input type="checkbox" ${c.proprio ? 'checked' : ''} onchange="updateVal(${c.id}, 'proprio', this.checked)" class="w-5 h-5 accent-blue-600">
-                                <span class="text-[9px] font-black text-slate-500 uppercase">${c.proprio ? 'Minha' : 'Terceiro'}</span>
+                                <span class="text-[9px] font-black text-slate-500 uppercase">${c.proprio ? 'Meu Bolso' : 'Terceiro'}</span>
                             </div>
                         </label>
                     </div>
@@ -153,8 +150,7 @@
         window.mascara = (el, id, campo) => {
             let v = el.value.replace(/\D/g, '');
             let n = parseFloat((v / 100).toFixed(2)) || 0;
-            if(id === 'BASE') db.meuInvestimento = n;
-            else db.contas.find(x => x.id === id)[campo] = n;
+            db.contas.find(x => x.id === id)[campo] = n;
             el.value = fmt(n);
             calcular();
         };
@@ -180,8 +176,6 @@
         };
 
         document.getElementById('btnPrivacidade').onclick = () => { db.privacidade = !db.privacidade; render(); };
-        document.getElementById('campoBancaBase').oninput = function() { mascara(this, 'BASE'); };
-        document.getElementById('campoBancaBase').value = fmt(db.meuInvestimento);
 
         render();
     </script>
