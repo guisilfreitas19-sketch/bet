@@ -2,7 +2,7 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8" />
-<title>Bet Dashboard - Gestão Premium</title>
+<title>Bet Dashboard - Lucro Real</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet" />
 <style>
@@ -54,55 +54,70 @@ button { cursor:pointer; }
 
 <script>
 let db = {
-  contas: JSON.parse(localStorage.getItem('c_v201')) || [
+  contas: JSON.parse(localStorage.getItem('c_v300')) || [
     { id: 1, nome: 'BETANO EVERTON', saldo: 3400, investimento: 4000, comissao: 10, dono: 'sociedade' },
     { id: 2, nome: 'ESTRELA BET', saldo: 1050, investimento: 1000, comissao: 100, dono: 'seu' },
-    { id: 3, nome: 'BETANO INGRID', saldo: 1000, investimento: 1000, comissao: 50, dono: 'gestao' }
+    { id: 3, nome: 'BETANO INGRID', saldo: 1500, investimento: 1000, comissao: 50, dono: 'gestao' }
   ]
 };
 
 const fmt = v => v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 
-// --- Cálculo do lucro líquido ---
+// --- Calcula lucro líquido total ---
 function calcular(){
   let total = 0;
   db.contas.forEach(c=>{
-    const lucro = c.saldo - c.investimento;
-    let valor = 0;
+    const lucroBruto = c.saldo - c.investimento;
+    let lucro = 0;
 
-    if(c.dono==='seu'){ 
-      valor = c.saldo; 
-    }
-    else if(c.dono==='sociedade'){ 
-      if(lucro>0){ 
-        const comissao = lucro*(c.comissao/100); 
-        valor = c.investimento + (lucro - comissao);
-      } else { 
-        valor = c.saldo; 
+    if(c.dono==='seu'){
+      lucro = c.saldo; // todo saldo é seu
+    } else if(c.dono==='sociedade'){
+      // Dinheiro seu, paga comissão se lucro positivo
+      if(lucroBruto>0){
+        const comissao = lucroBruto * (c.comissao/100);
+        lucro = c.investimento + (lucroBruto - comissao);
+      } else {
+        lucro = c.saldo; // prejuízo é seu, sem comissão
       }
-    }
-    else if(c.dono==='gestao'){ 
-      valor = lucro>0 ? lucro*(c.comissao/100) : 0;
+    } else if(c.dono==='gestao'){
+      // Dinheiro de terceiros, você só ganha comissão
+      lucro = lucroBruto>0 ? lucroBruto * (c.comissao/100) : 0;
     }
 
-    total += valor;
+    total += lucro;
   });
 
   document.getElementById('exibirLucro').innerText = fmt(total);
 }
 
-// --- Render dos cards ---
+// --- Renderiza cards ---
 function render(){
   const el = document.getElementById('listaContas');
   el.innerHTML = '';
 
   db.contas.forEach(c=>{
-    const lucro = c.saldo - c.investimento;
-    const lucroClass = lucro>=0?'text-green-500':'text-red-500';
-    let comissaoTexto='';
-    if(c.dono==='sociedade' && lucro>0) comissaoTexto = `(Comissão paga: ${Math.round(lucro*c.comissao/100)} )`;
-    if(c.dono==='gestao' && lucro>0) comissaoTexto = `(Comissão recebida: ${Math.round(lucro*c.comissao/100)})`;
+    const lucroBruto = c.saldo - c.investimento;
+    let lucroTexto='', lucroVal=0;
 
+    if(c.dono==='seu'){
+      lucroVal = c.saldo;
+      lucroTexto = `Lucro líquido: ${fmt(lucroVal)}`;
+    } else if(c.dono==='sociedade'){
+      if(lucroBruto>0){
+        const comissao = lucroBruto * (c.comissao/100);
+        lucroVal = c.investimento + (lucroBruto - comissao);
+        lucroTexto = `Lucro líquido: ${fmt(lucroVal)} (Comissão paga: ${fmt(comissao)})`;
+      } else {
+        lucroVal = c.saldo;
+        lucroTexto = `Lucro líquido: ${fmt(lucroVal)}`;
+      }
+    } else if(c.dono==='gestao'){
+      lucroVal = lucroBruto>0 ? lucroBruto*(c.comissao/100) : 0;
+      lucroTexto = `Lucro líquido: ${fmt(lucroVal)}`;
+    }
+
+    const lucroClass = lucroVal>=0?'text-green-500':'text-red-500';
     const tipoCor = c.dono==='seu'?'text-green-600': c.dono==='sociedade'?'text-blue-600':'text-yellow-600';
 
     const card = document.createElement('div');
@@ -123,7 +138,7 @@ function render(){
         <span>Tipo: <span class="${tipoCor} font-bold">${c.dono.toUpperCase()}</span></span>
       </div>
 
-      <p class="mt-3 text-sm font-mono font-bold ${lucroClass}">Lucro: ${fmt(lucro)} ${comissaoTexto}</p>
+      <p class="mt-3 text-sm font-mono font-bold ${lucroClass}">${lucroTexto}</p>
     `;
 
     el.appendChild(card);
@@ -148,7 +163,7 @@ function del(id){
 }
 
 function salvar(){
-  localStorage.setItem('c_v201', JSON.stringify(db.contas));
+  localStorage.setItem('c_v300', JSON.stringify(db.contas));
   calcular();
 }
 
