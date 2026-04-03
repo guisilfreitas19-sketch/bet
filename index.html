@@ -132,10 +132,16 @@ function render(){
 
       <div class="flex justify-between text-[10px] text-slate-400 mb-1">
         <label>Investimento: 
-          <input type="text" value="${fmt(c.investimento)}" oninput="maskInvest(this,${c.id})" class="w-24 border-b border-slate-300 text-slate-600 focus:ring-0 font-mono" />
+          <input type="text" value="${fmt(c.investimento)}" 
+                 oninput="maskInvest(this,${c.id})" 
+                 onblur="formatInvest(this,${c.id})" 
+                 class="w-24 border-b border-slate-300 text-slate-600 focus:ring-0 font-mono" />
         </label>
         <label>Saldo: 
-          <input type="text" value="${fmt(c.saldo)}" oninput="maskSaldo(this,${c.id})" class="w-24 border-b border-slate-300 text-slate-600 focus:ring-0 font-mono" />
+          <input type="text" value="${fmt(c.saldo)}" 
+                 oninput="maskSaldo(this,${c.id})" 
+                 onblur="formatSaldo(this,${c.id})" 
+                 class="w-24 border-b border-slate-300 text-slate-600 focus:ring-0 font-mono" />
         </label>
       </div>
 
@@ -179,24 +185,33 @@ function salvar(){
   calcular();
 }
 
-function maskSaldo(el,id){
-  let v = el.value.replace(/\D/g,'');
-  let n = parseFloat((v/100).toFixed(2))||0;
-  const c = db.contas.find(x=>x.id===id);
-  if(!c) return;
-  c.saldo = n;
-  el.value = fmt(n);
-  salvar(); render();
+// --- Máscara de saldo e investimento ---
+function maskSaldo(el, id){
+    const c = db.contas.find(x=>x.id===id);
+    if(!c) return;
+    let v = el.value.replace(/[^\d.,]/g,'').replace(',', '.');
+    let n = parseFloat(v);
+    if(!isNaN(n)) c.saldo = n;
+    el.value = el.value; // não altera enquanto digita
+}
+function formatSaldo(el,id){
+    const c = db.contas.find(x=>x.id===id);
+    if(!c) return;
+    el.value = fmt(c.saldo);
 }
 
-function maskInvest(el,id){
-  let v = el.value.replace(/\D/g,'');
-  let n = parseFloat((v/100).toFixed(2))||0;
-  const c = db.contas.find(x=>x.id===id);
-  if(!c) return;
-  c.investimento = n;
-  el.value = fmt(n);
-  salvar(); render();
+function maskInvest(el, id){
+    const c = db.contas.find(x=>x.id===id);
+    if(!c) return;
+    let v = el.value.replace(/[^\d.,]/g,'').replace(',', '.');
+    let n = parseFloat(v);
+    if(!isNaN(n)) c.investimento = n;
+    el.value = el.value;
+}
+function formatInvest(el,id){
+    const c = db.contas.find(x=>x.id===id);
+    if(!c) return;
+    el.value = fmt(c.investimento);
 }
 
 // --- Nova conta ---
